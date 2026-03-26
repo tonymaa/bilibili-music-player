@@ -35,36 +35,10 @@ const URL_FAV_LIST = 'https://api.bilibili.com/x/v3/fav/resource/list?media_id={
 const URL_SERIES_LIST = 'https://api.bilibili.com/x/series/archives?mid={mid}&series_id={sid}&pn={page}&ps=30';
 const URL_COLLE_LIST = 'https://api.bilibili.com/x/polymer/space/seasons_archives_list?mid={mid}&season_id={sid}&sort_reverse=false&page_num={page}&page_size=30';
 
-// 歌名提取正则
-const extractSongName = (filename: string, uploader = ''): string => {
-  let name = String(filename || '').trim();
-  const uploaderName = String(uploader || '').trim();
-
-  // 尝试从书名号中提取
-  const bookMatch = name.match(/《([^》]+)》/);
-  if (bookMatch?.[1]) return bookMatch[1];
-
-  // 移除 "歌手 - 歌名" 格式中的歌手
-  const artistTitle = name.match(/^.+?\s-\s(.+)$/);
-  if (artistTitle?.[1]) {
-    name = artistTitle[1];
-  }
-
-  // 如果包含上传者名称，移除后再处理
-  if (uploaderName && name.includes(uploaderName)) {
-    name = name.replaceAll(uploaderName, '');
-  }
-
-  // 移除【】[]等标签
-  name = name.replace(/[【\[].+?[】\]]/g, '');
-
-  // 移除括号内容
-  name = name.replace(/\(.*?\)|（.*?）/g, '');
-
-  // 移除序号前缀
-  name = name.replace(/^\d+[._\-\s]*/, '');
-
-  return name.trim() || filename;
+// 歌名提取 - 保持原样，不做解析
+const extractSongName = (filename: string, _uploader = ''): string => {
+  const original = String(filename || '').trim();
+  return original;
 };
 
 export class BilibiliService {
@@ -275,16 +249,19 @@ export class BilibiliService {
       }
 
       const data = res.data.data;
-      console.log('[FavList] Success:', mediaId, 'page:', page, 'count:', data.medias?.length, 'total:', data.info?.media_count);
-      const songs: Song[] = (data.medias || []).map((item: any) => ({
-        id: String(item.id),
-        bvid: item.bvid,
-        name: extractSongName(item.title, item.upper?.name),
-        singer: item.upper?.name || '',
-        singerId: item.upper?.mid || 0,
-        cover: item.cover,
-        duration: item.duration
-      }));
+
+      const songs: Song[] = (data.medias || []).map((item: any) => {
+        const songName = extractSongName(item.title, item.upper?.name);
+        return {
+          id: String(item.id),
+          bvid: item.bvid,
+          name: songName,
+          singer: item.upper?.name || '',
+          singerId: item.upper?.mid || 0,
+          cover: item.cover,
+          duration: item.duration
+        };
+      });
 
       return {
         songs,
