@@ -110,11 +110,6 @@ export class BilibiliService {
       const url = URL_PLAY_URL.replace('{bvid}', bvid).replace('{cid}', cid);
       console.log('[PlayUrl] Fetching:', url);
 
-      // 生成更真实的 cookie
-      const timestamp = Date.now();
-      const buvid3 = `X${generateBuvid()}${generateBuvid()}infoc`;
-      const buvid4 = `X${generateBuvid()}${generateBuvid()}infoc`;
-
       const res = await axios.get(url, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36',
@@ -133,7 +128,6 @@ export class BilibiliService {
           'Sec-Fetch-User': '?1',
           'Upgrade-Insecure-Requests': '1',
           'Priority': 'u=0, i',
-          'Cookie': `buvid3=${buvid3}; buvid4=${buvid4}; CURRENT_FNVAL=4048; b_nut=${timestamp};`,
         },
         timeout: 15000
       });
@@ -183,7 +177,6 @@ export class BilibiliService {
           'Sec-Fetch-Site': 'none',
           'Sec-Fetch-User': '?1',
           'Priority': 'u=0, i',
-          // 'Cookie': `buvid3=${buvid3}; buvid4=${buvid4}; CURRENT_FNVAL=4048; b_nut=${timestamp};`,
         },
         timeout: 15000
       });
