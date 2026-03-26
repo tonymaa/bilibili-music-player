@@ -1,0 +1,27 @@
+.searchBar {
+  display: flex;
+  gap: 8px;
+}
+
+.searchBar .ant-input-affix-wrapper {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: #fff;
+}
+
+.searchBar .ant-input-affix-wrapper::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.searchBar .ant-input {
+  background: transparent;
+  color: #fff;
+}
+
+.searchBar .ant-input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.searchBar .anticon {
+  color: rgba(255, 255, 255, 0.8);
+}

@@ -1,0 +1,43 @@
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+}
+
+.logoText {
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.search {
+  flex: 1;
+  max-width: 500px;
+  margin: 0 24px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.actions .ant-btn {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.actions .ant-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}

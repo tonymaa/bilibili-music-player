@@ -1,0 +1,79 @@
+.modal :global .ant-modal-body {
+  padding: 16px;
+}
+
+.container {
+  height: 400px;
+  display: flex;
+  flex-direction: column;
+}
+
+.search {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.search .ant-input-affix-wrapper {
+  flex: 1;
+}
+
+.results {
+  max-height: 150px;
+  overflow: auto;
+  margin-bottom: 16px;
+  border: 1px solid #f0f0f0;
+  border-radius: 4px;
+}
+
+.resultItem {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.resultItem:hover {
+  background: #f5f5f5;
+}
+
+.resultName {
+  font-weight: 500;
+}
+
+.resultSinger {
+  font-size: 12px;
+  color: #999;
+}
+
+.offset {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  font-size: 12px;
+  color: #666;
+}
+
+.lyricContainer {
+  flex: 1;
+  overflow: auto;
+  background: #fafafa;
+  border-radius: 4px;
+  padding: 16px;
+}
+
+.lrc {
+  height: 100%;
+}
+
+.line {
+  padding: 8px 0;
+  color: #666;
+  transition: all 0.3s;
+}
+
+.activeLine {
+  padding: 8px 0;
+  color: #1890ff;
+  font-weight: 500;
+  font-size: 16px;
+}
