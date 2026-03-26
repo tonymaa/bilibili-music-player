@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { Menu, Button, Modal, Input, message } from 'antd';
-import { PlusOutlined, FolderOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
+import { Menu, Button, Modal, Input, message, Dropdown } from 'antd';
+import { PlusOutlined, FolderOutlined, DeleteOutlined, EditOutlined, MoreOutlined } from '@ant-design/icons';
 import { usePlaylistStore } from '../../stores/playlistStore';
 import { Playlist } from '@shared/types';
 import styles from './Sidebar.module.css';
 
 const Sidebar: React.FC = () => {
-  const { playlists, currentPlaylist, loadPlaylists, loadPlaylistDetail, createPlaylist, deletePlaylist } = usePlaylistStore();
+  const { playlists, currentPlaylist, loadPlaylists, loadPlaylistDetail, createPlaylist, deletePlaylist, updatePlaylist } = usePlaylistStore();
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState('');
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [renameModalVisible, setRenameModalVisible] = useState(false);
   const [playlistToDelete, setPlaylistToDelete] = useState<Playlist | null>(null);
+  const [playlistToRename, setPlaylistToRename] = useState<Playlist | null>(null);
+  const [renameValue, setRenameValue] = useState('');
 
   useEffect(() => {
     loadPlaylists();
@@ -52,6 +55,46 @@ const Sidebar: React.FC = () => {
     }
   };
 
+  const handleRenamePlaylist = async () => {
+    if (!playlistToRename || !renameValue.trim()) {
+      message.warning('请输入歌单名称');
+      return;
+    }
+
+    const success = await updatePlaylist(playlistToRename.id, { title: renameValue.trim() });
+    if (success) {
+      message.success('重命名成功');
+      setRenameModalVisible(false);
+      setPlaylistToRename(null);
+      setRenameValue('');
+    } else {
+      message.error('重命名失败');
+    }
+  };
+
+  const getPlaylistMenuItems = (playlist: Playlist) => [
+    {
+      key: 'rename',
+      label: '重命名',
+      icon: <EditOutlined />,
+      onClick: () => {
+        setPlaylistToRename(playlist);
+        setRenameValue(playlist.title);
+        setRenameModalVisible(true);
+      }
+    },
+    {
+      key: 'delete',
+      label: '删除',
+      icon: <DeleteOutlined />,
+      danger: true,
+      onClick: () => {
+        setPlaylistToDelete(playlist);
+        setDeleteModalVisible(true);
+      }
+    }
+  ];
+
   const menuItems = [
     {
       key: 'playlists',
@@ -62,7 +105,21 @@ const Sidebar: React.FC = () => {
         label: (
           <div className={styles.menuItem}>
             <span className={styles.menuItemText}>{p.title}</span>
-            <span className={styles.menuItemCount}>{p.songCount}</span>
+            <div className={styles.menuItemRight}>
+              {p.songCount > 0 && <span className={styles.menuItemCount}>{p.songCount}</span>}
+              <Dropdown
+                menu={{ items: getPlaylistMenuItems(p) }}
+                trigger={['click']}
+              >
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<MoreOutlined />}
+                  className={styles.menuItemBtn}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </Dropdown>
+            </div>
           </div>
         ),
         icon: <FolderOutlined />
@@ -124,6 +181,27 @@ const Sidebar: React.FC = () => {
         cancelText="取消"
       >
         <p>确定要删除歌单 "{playlistToDelete?.title}" 吗？</p>
+      </Modal>
+
+      {/* 重命名歌单对话框 */}
+      <Modal
+        title="重命名歌单"
+        open={renameModalVisible}
+        onOk={handleRenamePlaylist}
+        onCancel={() => {
+          setRenameModalVisible(false);
+          setPlaylistToRename(null);
+          setRenameValue('');
+        }}
+        okText="确定"
+        cancelText="取消"
+      >
+        <Input
+          placeholder="请输入歌单名称"
+          value={renameValue}
+          onChange={e => setRenameValue(e.target.value)}
+          onPressEnter={handleRenamePlaylist}
+        />
       </Modal>
     </div>
   );

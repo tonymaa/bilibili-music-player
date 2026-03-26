@@ -132,7 +132,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       // 通过后端代理获取音频 URL
       const res = await bilibiliApi.getPlayUrl(song.bvid, cid);
       if (res.code === 0 && res.data?.audioUrl) {
-        audioElement.src = res.data.audioUrl;
+        // 通过后端代理播放，避免 403
+        audioElement.src = `/api/bilibili/audio-proxy?url=${encodeURIComponent(res.data.audioUrl)}`;
 
         // 确定当前列表和索引
         const currentList = playMode === 'shuffle' ? shuffledPlaylist : playlist;

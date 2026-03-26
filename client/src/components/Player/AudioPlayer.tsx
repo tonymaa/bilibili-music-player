@@ -20,6 +20,15 @@ const formatTime = (seconds: number): string => {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
+// 图片代理，避免 403
+const proxyImage = (url: string | undefined): string => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return `/api/bilibili/image-proxy?url=${encodeURIComponent(url)}`;
+  }
+  return url;
+};
+
 const AudioPlayer: React.FC = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const {
@@ -154,7 +163,7 @@ const AudioPlayer: React.FC = () => {
         {currentSong ? (
           <>
             <div className={styles.cover}>
-              {currentSong.cover && <img src={currentSong.cover} alt="cover" />}
+              {currentSong.cover && <img src={proxyImage(currentSong.cover)} alt="cover" />}
             </div>
             <div className={styles.info}>
               <div className={styles.name}>{currentSong.name}</div>
