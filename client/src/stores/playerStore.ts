@@ -118,8 +118,19 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     if (!audioElement) return;
 
     try {
+      // 先获取视频详情拿到 cid（收藏夹返回的 song.id 是 aid，不是 cid）
+      const infoRes = await bilibiliApi.getVideoInfo(song.bvid);
+      if (infoRes.code !== 0 || !infoRes.data?.info?.pages?.length) {
+        console.error('Failed to get video info for:', song.bvid, infoRes.message);
+        return;
+      }
+
+      // 取第一个分P的 cid（多P视频暂不支持选择）
+      const cid = String(infoRes.data.info.pages[0].cid);
+      console.log('[Player] Got cid:', cid, 'for bvid:', song.bvid);
+
       // 通过后端代理获取音频 URL
-      const res = await bilibiliApi.getPlayUrl(song.bvid, song.id);
+      const res = await bilibiliApi.getPlayUrl(song.bvid, cid);
       if (res.code === 0 && res.data?.audioUrl) {
         audioElement.src = res.data.audioUrl;
 

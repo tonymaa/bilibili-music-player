@@ -72,14 +72,16 @@ export class BilibiliService {
   async getVideoInfo(bvid: string): Promise<BilibiliVideoInfo | null> {
     try {
       const url = URL_VIDEO_INFO.replace('{bvid}', bvid);
+      console.log('[VideoInfo] Fetching:', url);
       const res = await axios.get(url, { headers: BILIBILI_HEADERS });
 
       if (res.data.code !== 0) {
-        console.error('Bilibili API error:', res.data.message);
+        console.error('[VideoInfo] API error:', res.data.code, res.data.message);
         return null;
       }
 
       const data = res.data.data;
+      console.log('[VideoInfo] Success:', bvid, 'pages:', data.pages?.length);
       return {
         bvid: data.bvid,
         title: data.title,
@@ -97,7 +99,7 @@ export class BilibiliService {
         videos: data.videos
       };
     } catch (error) {
-      console.error('Failed to fetch video info:', error);
+      console.error('[VideoInfo] Failed:', error);
       return null;
     }
   }
@@ -106,7 +108,7 @@ export class BilibiliService {
   async getPlayUrl(bvid: string, cid: string): Promise<string> {
     try {
       const url = URL_PLAY_URL.replace('{bvid}', bvid).replace('{cid}', cid);
-      console.log('Fetching play URL:', url);
+      console.log('[PlayUrl] Fetching:', url);
 
       // 生成更真实的 cookie
       const timestamp = Date.now();
@@ -125,15 +127,15 @@ export class BilibiliService {
         timeout: 15000
       });
 
-      console.log('PlayUrl API response:', JSON.stringify(res.data).substring(0, 500));
+      console.log('[PlayUrl] Response code:', res.data.code, res.data.message || 'ok');
 
       if (res.data.code !== 0) {
-        console.error('Bilibili API error:', res.data.code, res.data.message);
+        console.error('[PlayUrl] API error:', res.data.code, res.data.message);
         return await this.getPlayUrlFallback(bvid, cid);
       }
 
       const audioUrl = this.extractAudioUrl(res.data);
-      console.log('Extracted audio URL:', audioUrl ? 'success' : 'failed');
+      console.log('[PlayUrl] Extract audio:', audioUrl ? 'success' : 'failed');
 
       if (!audioUrl) {
         return await this.getPlayUrlFallback(bvid, cid);
@@ -141,7 +143,7 @@ export class BilibiliService {
 
       return audioUrl;
     } catch (error: any) {
-      console.error('Failed to fetch play URL:', error?.message || error);
+      console.error('[PlayUrl] Failed:', error?.message || error);
       return await this.getPlayUrlFallback(bvid, cid);
     }
   }
@@ -149,7 +151,7 @@ export class BilibiliService {
   // 备用方案：尝试不同的参数组合
   async getPlayUrlFallback(bvid: string, cid: string): Promise<string> {
     try {
-      console.log('Trying fallback method for', bvid, cid);
+      console.log('[PlayUrl] Trying fallback for', bvid, cid);
 
       // 尝试使用更简单的参数
       const url = `https://api.bilibili.com/x/player/playurl?bvid=${bvid}&cid=${cid}&qn=16&fnval=16&fnver=0&fourk=0`;
@@ -167,20 +169,20 @@ export class BilibiliService {
         timeout: 15000
       });
 
-      console.log('Fallback API response code:', res.data.code);
+      console.log('[PlayUrl] Fallback response code:', res.data.code);
 
       if (res.data.code === 0) {
         const audioUrl = this.extractAudioUrl(res.data);
         if (audioUrl) {
-          console.log('Fallback extracted audio URL success');
+          console.log('[PlayUrl] Fallback success');
           return audioUrl;
         }
       }
 
-      console.log('All methods failed for', bvid, cid);
+      console.log('[PlayUrl] All methods failed for', bvid, cid);
       return '';
     } catch (error: any) {
-      console.error('Fallback method failed:', error?.message || error);
+      console.error('[PlayUrl] Fallback failed:', error?.message || error);
       return '';
     }
   }
@@ -252,14 +254,16 @@ export class BilibiliService {
   async getFavList(mediaId: string, page = 1): Promise<{ songs: Song[]; hasMore: boolean; total: number }> {
     try {
       const url = URL_FAV_LIST.replace('{mediaId}', mediaId).replace('{page}', String(page));
+      console.log('[FavList] Fetching:', url);
       const res = await axios.get(url, { headers: BILIBILI_HEADERS });
 
       if (res.data.code !== 0) {
-        console.error('Bilibili API error:', res.data.message);
+        console.error('[FavList] API error:', res.data.code, res.data.message);
         return { songs: [], hasMore: false, total: 0 };
       }
 
       const data = res.data.data;
+      console.log('[FavList] Success:', mediaId, 'page:', page, 'count:', data.medias?.length, 'total:', data.info?.media_count);
       const songs: Song[] = (data.medias || []).map((item: any) => ({
         id: String(item.id),
         bvid: item.bvid,
@@ -276,7 +280,7 @@ export class BilibiliService {
         total: data.info?.media_count || songs.length
       };
     } catch (error) {
-      console.error('Failed to fetch fav list:', error);
+      console.error('[FavList] Failed:', error);
       return { songs: [], hasMore: false, total: 0 };
     }
   }
