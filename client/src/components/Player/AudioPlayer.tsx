@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Slider, Button, Space, Tooltip, Dropdown } from 'antd';
+import React, { useEffect, useRef } from 'react';
+import { Slider, Button, Tooltip, Dropdown, Popover } from 'antd';
 import {
   PlayCircleOutlined,
   PauseCircleOutlined,
@@ -8,7 +8,8 @@ import {
   SoundOutlined,
   RetweetOutlined,
   SwapOutlined,
-  UnorderedListOutlined
+  UnorderedListOutlined,
+  DeleteOutlined
 } from '@ant-design/icons';
 import { usePlayerStore } from '../../stores/playerStore';
 import styles from './AudioPlayer.module.css';
@@ -33,6 +34,7 @@ const AudioPlayer: React.FC = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const {
     currentSong,
+    currentIndex,
     isPlaying,
     currentTime,
     duration,
@@ -43,6 +45,9 @@ const AudioPlayer: React.FC = () => {
     togglePlay,
     playNext,
     playPrev,
+    playByIndex,
+    removeFromPlaylist,
+    clearPlaylist,
     setCurrentTime,
     setDuration,
     setVolume,
@@ -50,8 +55,6 @@ const AudioPlayer: React.FC = () => {
     loadSettings,
     saveProgress
   } = usePlayerStore();
-
-  const [showPlaylist, setShowPlaylist] = useState(false);
 
   // 初始化
   useEffect(() => {
@@ -233,6 +236,57 @@ const AudioPlayer: React.FC = () => {
             <Button type="text" icon={currentPlayMode?.icon} />
           </Tooltip>
         </Dropdown>
+
+        <Popover
+          content={
+            <div className={styles.playlistPopover}>
+              <div className={styles.playlistHeader}>
+                <span>播放列表 ({playlist.length}首)</span>
+              </div>
+              <div className={styles.playlistContent}>
+                {playlist.length === 0 ? (
+                  <div className={styles.playlistEmpty}>播放列表为空</div>
+                ) : (
+                  playlist.map((song, index) => (
+                    <div
+                      key={song.id}
+                      className={`${styles.playlistItem} ${currentSong?.id === song.id ? styles.active : ''}`}
+                      onClick={() => playByIndex(index)}
+                    >
+                      <div className={styles.playlistItemIndex}>
+                        {currentSong?.id === song.id ? (
+                          <PlayCircleOutlined style={{ color: '#1890ff' }} />
+                        ) : (
+                          <span>{index + 1}</span>
+                        )}
+                      </div>
+                      <div className={styles.playlistItemInfo}>
+                        <div className={styles.playlistItemName}>{song.name}</div>
+                        <div className={styles.playlistItemSinger}>{song.singer}</div>
+                      </div>
+                      <Button
+                        type="text"
+                        size="small"
+                        danger
+                        icon={<DeleteOutlined />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeFromPlaylist(index);
+                        }}
+                      />
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          }
+          trigger="click"
+          placement="topRight"
+        >
+          <Tooltip title="播放列表">
+            <Button type="text" icon={<UnorderedListOutlined />} />
+          </Tooltip>
+        </Popover>
 
         <span className={styles.playlistCount}>{playlist.length} 首</span>
       </div>

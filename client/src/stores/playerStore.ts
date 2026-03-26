@@ -44,6 +44,8 @@ interface PlayerState {
   setAudioElement: (audio: HTMLAudioElement) => void;
   setPlaylist: (songs: Song[], playFirst?: boolean) => void;
   addToPlaylist: (songs: Song[]) => void;
+  removeFromPlaylist: (index: number) => void;
+  clearPlaylist: () => void;
   playSong: (song: Song) => void;
   playByIndex: (index: number) => void;
   playNext: () => void;
@@ -111,6 +113,60 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     }
 
     set({ playlist: newPlaylist, shuffledPlaylist: newShuffled });
+  },
+
+  removeFromPlaylist: (index) => {
+    const { playlist, shuffledPlaylist, currentIndex, currentSong, playMode } = get();
+    if (index < 0 || index >= playlist.length) return;
+
+    const removedSong = playlist[index];
+    const newPlaylist = playlist.filter((_, i) => i !== index);
+    const newShuffled = shuffledPlaylist.filter(s => s.id !== removedSong.id);
+
+    let newCurrentSong = currentSong;
+    let newCurrentIndex = currentIndex;
+    let newIsPlaying = get().isPlaying;
+
+    // 如果删除的是当前播放的歌曲
+    if (currentSong?.id === removedSong.id) {
+      if (newPlaylist.length === 0) {
+        newCurrentSong = null;
+        newCurrentIndex = 0;
+        newIsPlaying = false;
+        get().audioElement?.pause();
+      } else {
+        // 播放下一首（或第一首）
+        const nextIndex = Math.min(currentIndex, newPlaylist.length - 1);
+        const currentList = playMode === 'shuffle' ? newShuffled : newPlaylist;
+        newCurrentSong = currentList[nextIndex] || null;
+        newCurrentIndex = nextIndex;
+        if (newCurrentSong) {
+          get().playSong(newCurrentSong);
+        }
+      }
+    } else if (currentIndex > index) {
+      // 如果删除的歌曲在当前播放歌曲之前，更新索引
+      newCurrentIndex = currentIndex - 1;
+    }
+
+    set({
+      playlist: newPlaylist,
+      shuffledPlaylist: newShuffled,
+      currentSong: newCurrentSong,
+      currentIndex: newCurrentIndex,
+      isPlaying: newIsPlaying
+    });
+  },
+
+  clearPlaylist: () => {
+    get().audioElement?.pause();
+    set({
+      playlist: [],
+      shuffledPlaylist: [],
+      currentSong: null,
+      currentIndex: 0,
+      isPlaying: false
+    });
   },
 
   playSong: async (song) => {
