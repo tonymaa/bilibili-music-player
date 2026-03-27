@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Slider, Button, Tooltip, Dropdown, Popover } from 'antd';
 import {
   PlayCircleOutlined,
@@ -16,7 +16,8 @@ import {
   CustomerServiceOutlined,
   PauseOutlined,
   MenuOutlined,
-  ArrowUpOutlined
+  ArrowUpOutlined,
+  CloseOutlined
 } from '@ant-design/icons';
 import { usePlayerStore } from '../../stores/playerStore';
 import styles from './PlayerPanel.module.css';
@@ -66,6 +67,17 @@ const PlayerPanel: React.FC<PlayerPanelProps> = ({ visible, onClose }) => {
   const [dragProgress, setDragProgress] = useState(0);
   const panelRef = useRef<HTMLDivElement>(null);
 
+  // ESC 键关闭
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && visible) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [visible, onClose]);
+
   // 处理进度条拖拽
   const handleSeekStart = () => {
     setIsDragging(true);
@@ -112,7 +124,7 @@ const PlayerPanel: React.FC<PlayerPanelProps> = ({ visible, onClose }) => {
         <div className={styles.header}>
           <Button
             type="text"
-            icon={<ArrowUpOutlined />}
+            icon={<CloseOutlined />}
             onClick={onClose}
             className={styles.closeBtn}
           />
