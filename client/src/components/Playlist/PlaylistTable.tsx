@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Table, Button, Space, Popconfirm, Input, message, Dropdown, Modal } from 'antd';
 import { PlayCircleOutlined, PlusOutlined, DeleteOutlined, EditOutlined, MoreOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
@@ -8,13 +8,19 @@ import { Song } from '@shared/types';
 import styles from './PlaylistTable.module.css';
 
 const PlaylistTable: React.FC = () => {
-  const { currentPlaylist, removeSongsFromPlaylist, renameSongInPlaylist, playlists, addSongsToPlaylist } = usePlaylistStore();
+  const { currentPlaylist, removeSongsFromPlaylist, renameSongInPlaylist, playlists, addSongsToPlaylist, loadPlaylistDetail } = usePlaylistStore();
   const { playSong, addToPlaylist } = usePlayerStore();
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [searchText, setSearchText] = useState('');
   const [renameModalVisible, setRenameModalVisible] = useState(false);
   const [songToRename, setSongToRename] = useState<Song | null>(null);
   const [newSongName, setNewSongName] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // 切换歌单时重置页码
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [currentPlaylist?.id]);
 
   if (!currentPlaylist) {
     return (
@@ -28,9 +34,18 @@ const PlaylistTable: React.FC = () => {
   const filteredSongs = searchText
     ? songs.filter(s => s.name.toLowerCase().includes(searchText.toLowerCase()) || s.singer.toLowerCase().includes(searchText.toLowerCase()))
     : songs;
+  const total = currentPlaylist.total || currentPlaylist.songCount || 0;
 
   const handlePlay = (song: Song) => {
     playSong(song);
+  };
+
+  const handleSearch = (value: string) => {
+    setSearchText(value);
+    setCurrentPage(1);
+    if (currentPlaylist) {
+      loadPlaylistDetail(currentPlaylist.id, 1, value || undefined);
+    }
   };
 
   const handleAddToNowPlaying = (song: Song) => {
@@ -150,10 +165,11 @@ const PlaylistTable: React.FC = () => {
       <div className={styles.header}>
         <h2 className={styles.title}>{currentPlaylist.title}</h2>
         <div className={styles.actions}>
-          <Input
+          <Input.Search
             placeholder="搜索歌曲"
             value={searchText}
             onChange={e => setSearchText(e.target.value)}
+            onSearch={handleSearch}
             style={{ width: 200 }}
             allowClear
           />
@@ -196,9 +212,17 @@ const PlaylistTable: React.FC = () => {
         dataSource={filteredSongs}
         rowSelection={rowSelection}
         pagination={{
+          current: currentPage,
+          total: total,
           pageSize: 50,
           showSizeChanger: true,
-          showTotal: total => `共 ${total} 首`
+          showTotal: total => `共 ${total} 首`,
+          onChange: (page) => {
+            setCurrentPage(page);
+            if (currentPlaylist) {
+              loadPlaylistDetail(currentPlaylist.id, page, searchText || undefined);
+            }
+          }
         }}
         size="small"
       />

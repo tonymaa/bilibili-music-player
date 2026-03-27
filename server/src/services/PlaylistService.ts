@@ -92,6 +92,7 @@ export class PlaylistService {
       description: playlist.description,
       coverUrl: playlist.cover_url,
       songCount: total,
+      total,
       createdAt: playlist.created_at,
       updatedAt: playlist.updated_at,
       songs

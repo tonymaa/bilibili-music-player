@@ -25,6 +25,7 @@ export interface Playlist {
 // 歌单详情（含歌曲）
 export interface PlaylistDetail extends Playlist {
   songs: Song[];
+  total?: number; // 总歌曲数（用于分页）
 }
 
 // 播放器设置
