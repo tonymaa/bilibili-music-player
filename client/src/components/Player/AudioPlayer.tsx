@@ -41,6 +41,7 @@ const AudioPlayer: React.FC = () => {
     volume,
     playMode,
     playlist,
+    pendingSeekTime,
     setAudioElement,
     togglePlay,
     playNext,
@@ -52,6 +53,7 @@ const AudioPlayer: React.FC = () => {
     setDuration,
     setVolume,
     setPlayMode,
+    setPendingSeekTime,
     loadSettings,
     saveProgress
   } = usePlayerStore();
@@ -119,6 +121,22 @@ const AudioPlayer: React.FC = () => {
   const handleLoadedMetadata = () => {
     if (audioRef.current) {
       setDuration(audioRef.current.duration);
+
+      // 处理待跳转时间
+      if (pendingSeekTime > 1 && audioRef.current.duration > 0) {
+        // 如果进度超过歌曲时长的 90%，重置为从头播放
+        if (pendingSeekTime >= audioRef.current.duration * 0.99) {
+          audioRef.current.currentTime = 0;
+        } else {
+          // 否则跳转到保存的进度（不超过时长）
+          const maxTime = Math.min(pendingSeekTime, audioRef.current.duration - 1);
+          if (maxTime > 0) {
+            audioRef.current.currentTime = maxTime;
+          }
+        }
+        // 清除待跳转时间
+        setPendingSeekTime(0);
+      }
     }
   };
 

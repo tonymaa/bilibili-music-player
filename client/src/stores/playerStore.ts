@@ -40,6 +40,12 @@ interface PlayerState {
   // Audio 元素引用
   audioElement: HTMLAudioElement | null;
 
+  // 加载状态（防止重复请求）
+  loadingBvid: string | null;
+
+  // 待跳转的播放时间（用于 duration 加载完成前）
+  pendingSeekTime: number;
+
   // Actions
   setAudioElement: (audio: HTMLAudioElement) => void;
   setPlaylist: (songs: Song[], playFirst?: boolean) => void;
@@ -58,6 +64,7 @@ interface PlayerState {
   loadSettings: () => Promise<void>;
   saveProgress: () => void;
   loadProgress: (songId: string) => Promise<number>;
+  setPendingSeekTime: (time: number) => void;
 }
 
 export const usePlayerStore = create<PlayerState>((set, get) => ({
@@ -71,6 +78,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   volume: 0.5,
   playMode: 'order',
   audioElement: null,
+  loadingBvid: null,
+  pendingSeekTime: 0,
 
   setAudioElement: (audio) => {
     set({ audioElement: audio });
@@ -170,14 +179,33 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
 
   playSong: async (song) => {
-    const { audioElement, playlist, shuffledPlaylist, playMode } = get();
+    const { audioElement, playlist, shuffledPlaylist, playMode, loadingBvid } = get();
     if (!audioElement) return;
 
+    // 防止重复请求：如果正在加载同一个 bvid，直接返回
+    if (loadingBvid === song.bvid) {
+      console.log('[Player] Already loading bvid:', song.bvid);
+      return;
+    }
+
+    // 如果当前播放的就是这首歌，直接播放
+    if (get().currentSong?.id === song.id && audioElement.src) {
+      const currentList = playMode === 'shuffle' ? shuffledPlaylist : playlist;
+      const index = currentList.findIndex(s => s.id === song.id);
+      set({ currentSong: song, currentIndex: index >= 0 ? index : 0, isPlaying: true });
+      await audioElement.play().catch(console.error);
+      return;
+    }
+
     try {
+      // 标记正在加载
+      set({ loadingBvid: song.bvid });
+
       // 先获取视频详情拿到 cid（收藏夹返回的 song.id 是 aid，不是 cid）
       const infoRes = await bilibiliApi.getVideoInfo(song.bvid);
       if (infoRes.code !== 0 || !infoRes.data?.info?.pages?.length) {
         console.error('Failed to get video info for:', song.bvid, infoRes.message);
+        set({ loadingBvid: null });
         return;
       }
 
@@ -188,6 +216,12 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       // 通过后端代理获取音频 URL
       const res = await bilibiliApi.getPlayUrl(song.bvid, cid);
       if (res.code === 0 && res.data?.audioUrl) {
+        // 先加载保存的进度（要在设置 src 之前，这样 loadedmetadata 触发时 pendingSeekTime 已经设置好了）
+        const progress = await get().loadProgress(song.id);
+        if (progress > 1) {
+          set({ pendingSeekTime: progress });
+        }
+
         // 通过后端代理播放，避免 403
         audioElement.src = `/api/bilibili/audio-proxy?url=${encodeURIComponent(res.data.audioUrl)}`;
 
@@ -203,16 +237,6 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
         await audioElement.play().catch(console.error);
 
-        // 加载保存的进度
-        const progress = await get().loadProgress(song.id);
-        if (progress > 1) {
-          setTimeout(() => {
-            if (audioElement) {
-              audioElement.currentTime = progress;
-            }
-          }, 500);
-        }
-
         // 保存设置
         playerApi.updatePlayerSettings({ lastSongId: song.id });
       } else {
@@ -220,6 +244,9 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       }
     } catch (error) {
       console.error('Error playing song:', error);
+    } finally {
+      // 清除加载标记
+      set({ loadingBvid: null });
     }
   },
 
@@ -329,5 +356,9 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   loadProgress: async (songId) => {
     const res = await playerApi.getPlayProgress(songId);
     return res.code === 0 ? res.data?.progress || 0 : 0;
+  },
+
+  setPendingSeekTime: (time) => {
+    set({ pendingSeekTime: time });
   }
 }));
