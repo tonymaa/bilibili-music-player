@@ -9,6 +9,7 @@ import {
   RetweetOutlined,
   SwapOutlined,
   UnorderedListOutlined,
+  OneToOneOutlined,
   DeleteOutlined
 } from '@ant-design/icons';
 import { usePlayerStore } from '../../stores/playerStore';
@@ -196,9 +197,9 @@ const AudioPlayer: React.FC = () => {
   };
 
   const playModeOptions = [
-    { key: 'order', label: '顺序播放', icon: <UnorderedListOutlined /> },
+    { key: 'order', label: '顺序播放', icon: <RetweetOutlined /> },
     { key: 'shuffle', label: '随机播放', icon: <SwapOutlined /> },
-    { key: 'singleLoop', label: '单曲循环', icon: <RetweetOutlined /> }
+    { key: 'singleLoop', label: '单曲循环', icon: <OneToOneOutlined /> }
   ];
 
   const currentPlayMode = playModeOptions.find(m => m.key === playMode);
