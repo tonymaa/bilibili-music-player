@@ -1,10 +1,11 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type { Song } from '@shared/types';
 import * as playerApi from '../api/player';
 import * as bilibiliApi from '../api/bilibili';
 
 // 洗牌函数
-function shuffleArray<T>(array: T[], keepFirstId?: string): T[] {
+function shuffleArray<T extends { id: string }>(array: T[], keepFirstId?: string): T[] {
   const result = [...array];
   for (let i = result.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -13,7 +14,7 @@ function shuffleArray<T>(array: T[], keepFirstId?: string): T[] {
 
   // 如果需要保持第一首
   if (keepFirstId && result.length >= 2) {
-    const keepIndex = result.findIndex((s: Song) => s.id === keepFirstId);
+    const keepIndex = result.findIndex((s) => s.id === keepFirstId);
     if (keepIndex > 0) {
       const [keepSong] = result.splice(keepIndex, 1);
       result.unshift(keepSong);
@@ -67,23 +68,25 @@ interface PlayerState {
   setPendingSeekTime: (time: number) => void;
 }
 
-export const usePlayerStore = create<PlayerState>((set, get) => ({
-  playlist: [],
-  shuffledPlaylist: [],
-  currentSong: null,
-  currentIndex: 0,
-  isPlaying: false,
-  currentTime: 0,
-  duration: 0,
-  volume: 0.5,
-  playMode: 'order',
-  audioElement: null,
-  loadingBvid: null,
-  pendingSeekTime: 0,
+export const usePlayerStore = create<PlayerState>()(
+  persist(
+    (set, get) => ({
+      playlist: [],
+      shuffledPlaylist: [],
+      currentSong: null,
+      currentIndex: 0,
+      isPlaying: false,
+      currentTime: 0,
+      duration: 0,
+      volume: 0.5,
+      playMode: 'order',
+      audioElement: null,
+      loadingBvid: null,
+      pendingSeekTime: 0,
 
-  setAudioElement: (audio) => {
-    set({ audioElement: audio });
-    audio.volume = get().volume;
+      setAudioElement: (audio) => {
+        set({ audioElement: audio });
+        audio.volume = get().volume;
   },
 
   setPlaylist: (songs, playFirst = false) => {
@@ -361,4 +364,15 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   setPendingSeekTime: (time) => {
     set({ pendingSeekTime: time });
   }
+}), {
+  name: 'player-storage',
+  partialize: (state) => ({
+    playlist: state.playlist,
+    shuffledPlaylist: state.shuffledPlaylist,
+    currentSong: state.currentSong,
+    currentIndex: state.currentIndex,
+    volume: state.volume,
+    playMode: state.playMode,
+    currentTime: state.currentTime
+  })
 }));

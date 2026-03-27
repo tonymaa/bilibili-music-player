@@ -12,6 +12,7 @@ import {
   DeleteOutlined
 } from '@ant-design/icons';
 import { usePlayerStore } from '../../stores/playerStore';
+import * as bilibiliApi from '../../api/bilibili';
 import styles from './AudioPlayer.module.css';
 
 const formatTime = (seconds: number): string => {
@@ -63,6 +64,38 @@ const AudioPlayer: React.FC = () => {
     if (audioRef.current) {
       setAudioElement(audioRef.current);
       loadSettings();
+
+      // 如果有保存的播放列表和当前歌曲，恢复播放
+      if (currentSong && playlist.length > 0) {
+        const restorePlay = async () => {
+          // 需要重新获取播放 URL
+          try {
+            const infoRes = await bilibiliApi.getVideoInfo(currentSong.bvid);
+            if (infoRes.code === 0 && infoRes.data?.info?.pages?.length) {
+              const cid = String(infoRes.data.info.pages[0].cid);
+              const res = await bilibiliApi.getPlayUrl(currentSong.bvid, cid);
+              if (res.code === 0 && res.data?.audioUrl) {
+                audioRef.current!.src = `/api/bilibili/audio-proxy?url=${encodeURIComponent(res.data.audioUrl)}`;
+
+                // 恢复播放进度
+                const { loadProgress } = usePlayerStore.getState();
+                const progress = await loadProgress(currentSong.id);
+                if (progress > 1) {
+                  setPendingSeekTime(progress);
+                }
+
+                // 如果之前在播放，恢复播放状态
+                // if (isPlaying) {
+                //   await audioRef.current!.play().catch(console.error);
+                // }
+              }
+            }
+          } catch (e) {
+            console.error('Failed to restore playback:', e);
+          }
+        };
+        restorePlay();
+      }
     }
   }, []);
 
