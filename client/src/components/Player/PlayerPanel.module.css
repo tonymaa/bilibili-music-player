@@ -1,0 +1,279 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.panel {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 毛玻璃背景 */
+.background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-size: cover;
+  background-position: center;
+  filter: blur(30px) brightness(0.8);
+  transform: scale(1.1);
+  z-index: -1;
+}
+
+.background::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* 顶部栏 */
+.header {
+  display: flex;
+  justify-content: flex-start;
+  padding: 16px;
+}
+
+.closeBtn {
+  color: #fff;
+  font-size: 24px;
+}
+
+/* 歌曲图片区域 */
+.coverContainer {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.coverWrapper {
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #333 0%, #111 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.coverWrapper.spinning {
+  animation: rotate 20s linear infinite;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.cover {
+  width: 90%;
+  height: 90%;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.defaultCover {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 80px;
+  color: #666;
+}
+
+/* 歌曲信息 */
+.songInfo {
+  text-align: center;
+  padding: 0 20px 20px;
+}
+
+.songName {
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.singer {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* 进度条 */
+.progress {
+  padding: 0 30px 20px;
+}
+
+.progress .ant-slider {
+  margin: 0;
+}
+
+.progress .ant-slider-track {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.progress .ant-slider-handle::after {
+  background: #fff;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
+}
+
+.time {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 4px;
+}
+
+/* 控制按钮 */
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 0 20px 20px;
+}
+
+.controls button {
+  color: #fff;
+}
+
+.modeBtn {
+  font-size: 20px;
+}
+
+.playBtnWrapper {
+  width: 64px;
+  height: 64px;
+}
+
+.playBtn {
+  font-size: 56px;
+  color: #fff !important;
+}
+
+/* 底部信息 */
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px 20px;
+}
+
+.volume {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+}
+
+.volumeSlider {
+  width: 80px;
+}
+
+.volumeSlider .ant-slider-track {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* 播放列表 Popover */
+.playlistPopover {
+  width: 320px;
+}
+
+.playlistHeader {
+  padding: 8px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.playlistContent {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.playlistEmpty {
+  text-align: center;
+  padding: 40px;
+  color: #999;
+}
+
+.playlistItem {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.playlistItem:hover {
+  background: #f5f5f5;
+}
+
+.playlistItem.active {
+  background: #e6f7ff;
+}
+
+.playlistItemIndex {
+  width: 30px;
+  color: #999;
+  font-size: 12px;
+}
+
+.playlistItemInfo {
+  flex: 1;
+  overflow: hidden;
+}
+
+.playlistItemName {
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.playlistItemSinger {
+  font-size: 12px;
+  color: #999;
+}

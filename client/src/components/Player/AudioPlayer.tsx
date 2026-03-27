@@ -32,7 +32,7 @@ const proxyImage = (url: string | undefined): string => {
   return url;
 };
 
-const AudioPlayer: React.FC = () => {
+const AudioPlayer: React.FC<{ onOpenPlayerPanel?: () => void }> = ({ onOpenPlayerPanel }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const {
     currentSong,
@@ -214,7 +214,7 @@ const AudioPlayer: React.FC = () => {
       />
 
       {/* 歌曲信息 */}
-      <div className={styles.songInfo}>
+      <div className={styles.songInfo} onClick={onOpenPlayerPanel} style={{ cursor: 'pointer' }}>
         {currentSong ? (
           <>
             <div className={styles.cover}>
