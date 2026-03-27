@@ -77,6 +77,52 @@ export class PlayerService {
       };
     });
   }
+
+  // 获取未播放完的歌曲（进度 < 时长 * 0.9）
+  getUnfinishedSongs(): { song: any; progress: number }[] {
+    const result = getDb().exec(`
+      SELECT s.*, pp.progress_seconds, pp.last_played_at
+      FROM songs s
+      JOIN play_progress pp ON s.id = pp.song_id
+      WHERE pp.progress_seconds < COALESCE(s.duration, 600) * 0.99
+      ORDER BY pp.last_played_at DESC
+      LIMIT 50
+    `);
+
+    if (result.length === 0) return [];
+
+    const columns = result[0].columns;
+    return result[0].values.map(values => {
+      const obj: any = {};
+      columns.forEach((col, i) => {
+        obj[col] = values[i];
+      });
+      return {
+        song: {
+          id: obj.id,
+          bvid: obj.bvid,
+          name: obj.name,
+          singer: obj.singer,
+          singerId: obj.singer_id,
+          cover: obj.cover_url,
+          duration: obj.duration
+        },
+        progress: obj.progress_seconds
+      };
+    });
+  }
+
+  // 清空所有播放进度
+  clearAllProgress(): void {
+    getDb().run('DELETE FROM play_progress');
+    saveDatabase();
+  }
+
+  // 删除单个歌曲的播放进度
+  deleteProgress(songId: string): void {
+    getDb().run('DELETE FROM play_progress WHERE song_id = ?', [songId]);
+    saveDatabase();
+  }
 }
 
 export const playerService = new PlayerService();

@@ -47,6 +47,9 @@ interface PlayerState {
   // 待跳转的播放时间（用于 duration 加载完成前）
   pendingSeekTime: number;
 
+  // 历史记录
+  history: Song[];
+
   // Actions
   setAudioElement: (audio: HTMLAudioElement) => void;
   setPlaylist: (songs: Song[], playFirst?: boolean) => void;
@@ -66,6 +69,13 @@ interface PlayerState {
   saveProgress: () => void;
   loadProgress: (songId: string) => Promise<number>;
   setPendingSeekTime: (time: number) => void;
+  addToHistory: (song: Song) => void;
+  removeFromHistory: (index: number) => void;
+  clearHistory: () => void;
+  clearAllProgress: () => Promise<void>;
+  deleteSongProgress: (songId: string) => Promise<void>;
+  unfinishedSongs: { song: Song; progress: number }[];
+  loadUnfinishedSongs: () => Promise<void>;
 }
 
 export const usePlayerStore = create<PlayerState>()(
@@ -83,6 +93,8 @@ export const usePlayerStore = create<PlayerState>()(
       audioElement: null,
       loadingBvid: null,
       pendingSeekTime: 0,
+      history: [],
+      unfinishedSongs: [],
 
       setAudioElement: (audio) => {
         set({ audioElement: audio });
@@ -238,6 +250,9 @@ export const usePlayerStore = create<PlayerState>()(
           isPlaying: true
         });
 
+        // 添加到播放历史
+        get().addToHistory(song);
+
         await audioElement.play().catch(console.error);
 
         // 保存设置
@@ -363,6 +378,44 @@ export const usePlayerStore = create<PlayerState>()(
 
   setPendingSeekTime: (time) => {
     set({ pendingSeekTime: time });
+  },
+
+  addToHistory: (song) => {
+    const { history, currentSong } = get();
+    // 不重复添加当前歌曲
+    if (song.id === currentSong?.id) return;
+    // 不重复添加已经在历史记录中的歌曲
+    if (history.some(s => s.id === song.id)) return;
+    const newHistory = [song, ...history].slice(0, 50); // 最多保留50条
+    set({ history: newHistory });
+  },
+
+  removeFromHistory: (index) => {
+    const { history } = get();
+    const newHistory = history.filter((_, i) => i !== index);
+    set({ history: newHistory });
+  },
+
+  clearHistory: () => {
+    set({ history: [] });
+  },
+
+  loadUnfinishedSongs: async () => {
+    const res = await playerApi.getUnfinishedSongs();
+    if (res.code === 0 && res.data) {
+      set({ unfinishedSongs: res.data });
+    }
+  },
+
+  clearAllProgress: async () => {
+    await playerApi.clearAllProgress();
+    set({ unfinishedSongs: [] });
+  },
+
+  deleteSongProgress: async (songId: string) => {
+    await playerApi.deleteProgress(songId);
+    const { unfinishedSongs } = get();
+    set({ unfinishedSongs: unfinishedSongs.filter(u => u.song.id !== songId) });
   }
 }), {
   name: 'player-storage',
@@ -373,6 +426,7 @@ export const usePlayerStore = create<PlayerState>()(
     currentIndex: state.currentIndex,
     volume: state.volume,
     playMode: state.playMode,
-    currentTime: state.currentTime
+    currentTime: state.currentTime,
+    history: state.history
   })
 }));
