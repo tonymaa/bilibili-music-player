@@ -16,6 +16,11 @@ export async function getPlaylistDetail(
   return get(`/playlists/${id}`, { page, pageSize, search });
 }
 
+// 获取歌单所有歌曲（不分页）
+export async function getPlaylistAllSongs(id: string): Promise<ApiResponse<Song[]>> {
+  return get(`/playlists/${id}/songs`);
+}
+
 // 创建歌单
 export async function createPlaylist(title: string, description?: string): Promise<ApiResponse<Playlist>> {
   return post('/playlists', { title, description });

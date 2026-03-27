@@ -10,6 +10,7 @@ interface PlaylistState {
   // Actions
   loadPlaylists: () => Promise<void>;
   loadPlaylistDetail: (id: string, page?: number, search?: string) => Promise<void>;
+  loadPlaylistAllSongs: (id: string) => Promise<Song[]>;
   createPlaylist: (title: string, description?: string) => Promise<Playlist | null>;
   updatePlaylist: (id: string, data: { title?: string; description?: string }) => Promise<boolean>;
   deletePlaylist: (id: string) => Promise<boolean>;
@@ -41,6 +42,14 @@ export const usePlaylistStore = create<PlaylistState>((set, get) => ({
     if (res.code === 0 && res.data) {
       set({ currentPlaylist: res.data });
     }
+  },
+
+  loadPlaylistAllSongs: async (id) => {
+    const res = await playlistApi.getPlaylistAllSongs(id);
+    if (res.code === 0 && res.data) {
+      return res.data;
+    }
+    return [];
   },
 
   createPlaylist: async (title, description) => {

@@ -28,6 +28,14 @@ router.get('/:id', (req: Request, res: Response) => {
   res.json({ code: 0, data: playlist });
 });
 
+// 获取歌单所有歌曲（不分页，用于播放全部）
+router.get('/:id/songs', (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  const songs = playlistService.getAllSongsFromPlaylist(id);
+  res.json({ code: 0, data: songs });
+});
+
 // 创建歌单
 router.post('/', (req: Request, res: Response) => {
   const { title, description } = req.body;

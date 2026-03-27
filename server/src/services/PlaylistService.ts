@@ -99,6 +99,41 @@ export class PlaylistService {
     };
   }
 
+  // 获取歌单所有歌曲（不分页）
+  getAllSongsFromPlaylist(id: string): Song[] {
+    const sql = `
+      SELECT s.*, ps.custom_name, ps.sort_order
+      FROM songs s
+      JOIN playlist_songs ps ON s.id = ps.song_id
+      WHERE ps.playlist_id = ?
+      ORDER BY ps.sort_order ASC, ps.added_at DESC
+    `;
+
+    const songsResult = getDb().exec(sql, [id]);
+    let songs: Song[] = [];
+
+    if (songsResult.length > 0) {
+      const columns = songsResult[0].columns;
+      songs = songsResult[0].values.map(values => {
+        const obj: any = {};
+        columns.forEach((col, i) => {
+          obj[col] = values[i];
+        });
+        return {
+          id: obj.id,
+          bvid: obj.bvid,
+          name: obj.custom_name || obj.name,
+          singer: obj.singer,
+          singerId: obj.singer_id,
+          cover: obj.cover_url,
+          duration: obj.duration
+        };
+      });
+    }
+
+    return songs;
+  }
+
   // 创建歌单
   createPlaylist(title: string, description?: string): Playlist {
     const id = uuidv4();

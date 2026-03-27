@@ -8,7 +8,7 @@ import { Song } from '@shared/types';
 import styles from './PlaylistTable.module.css';
 
 const PlaylistTable: React.FC = () => {
-  const { currentPlaylist, removeSongsFromPlaylist, renameSongInPlaylist, playlists, addSongsToPlaylist, loadPlaylistDetail } = usePlaylistStore();
+  const { currentPlaylist, removeSongsFromPlaylist, renameSongInPlaylist, playlists, addSongsToPlaylist, loadPlaylistDetail, loadPlaylistAllSongs } = usePlaylistStore();
   const { playSong, addToPlaylist } = usePlayerStore();
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [searchText, setSearchText] = useState('');
@@ -196,9 +196,12 @@ const PlaylistTable: React.FC = () => {
           <Button
             type="primary"
             icon={<PlayCircleOutlined />}
-            onClick={() => {
-              const { setPlaylist } = usePlayerStore.getState();
-              setPlaylist(songs, true);
+            onClick={async () => {
+              if (currentPlaylist) {
+                const allSongs = await loadPlaylistAllSongs(currentPlaylist.id);
+                const { setPlaylist } = usePlayerStore.getState();
+                setPlaylist(allSongs, true);
+              }
             }}
           >
             播放全部
