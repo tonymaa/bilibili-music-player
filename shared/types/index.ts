@@ -17,6 +17,9 @@ export interface Playlist {
   title: string;
   description?: string;
   coverUrl?: string;
+  playlistType?: 'normal' | 'subscription';
+  searchKeyword?: string;
+  lastSyncedAt?: string;
   songCount: number;
   createdAt: string;
   updatedAt: string;

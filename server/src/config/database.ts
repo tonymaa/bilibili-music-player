@@ -93,11 +93,37 @@ export async function initDatabase(): Promise<Database> {
     db.run('INSERT INTO player_settings (id) VALUES (1)');
   }
 
+  // 迁移 playlists 表添加新字段
+  migratePlaylists(db);
+
   // 保存数据库
   saveDatabase();
 
   console.log('Database initialized successfully');
   return db;
+}
+
+// 迁移 playlists 表添加新字段
+function migratePlaylists(db: Database) {
+  try {
+    const tableInfo = db.exec("PRAGMA table_info(playlists)");
+    if (tableInfo.length === 0) return;
+
+    const columns = tableInfo[0].values.map((row: any[]) => row[1]);
+
+    if (!columns.includes('playlist_type')) {
+      db.run("ALTER TABLE playlists ADD COLUMN playlist_type TEXT DEFAULT 'normal'");
+    }
+    if (!columns.includes('search_keyword')) {
+      db.run("ALTER TABLE playlists ADD COLUMN search_keyword TEXT");
+    }
+    if (!columns.includes('last_synced_at')) {
+      db.run("ALTER TABLE playlists ADD COLUMN last_synced_at DATETIME");
+    }
+    console.log('Database migration completed');
+  } catch (e) {
+    console.log('Migration skipped or complete');
+  }
 }
 
 // 保存数据库到文件
@@ -154,8 +180,6 @@ export function queryAll<T = any>(sql: string, params: any[] = []): T[] {
 export function run(sql: string, params: any[] = []): { changes: number; lastInsertRowId: number } {
   getDb().run(sql, params);
   saveDatabase();
-  // sql.js 没有直接返回 changes 和 lastInsertRowId
-  // 我们需要通过其他方式获取
   return { changes: 1, lastInsertRowId: 0 };
 }
 

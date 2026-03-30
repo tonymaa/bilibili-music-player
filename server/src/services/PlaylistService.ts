@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
-import { getDb, queryOne, queryAll, run, saveDatabase } from '../config/database';
+import { getDb, queryOne, queryAll, saveDatabase } from '../config/database';
 import { Song, Playlist, PlaylistDetail } from '../../../shared/types';
+import { bilibiliService } from './BilibiliService';
 
 export class PlaylistService {
   // 获取所有歌单
@@ -26,6 +27,9 @@ export class PlaylistService {
         title: obj.title,
         description: obj.description,
         coverUrl: obj.cover_url,
+        playlistType: obj.playlist_type || 'normal',
+        searchKeyword: obj.search_keyword,
+        lastSyncedAt: obj.last_synced_at,
         songCount: obj.song_count,
         createdAt: obj.created_at,
         updatedAt: obj.updated_at
@@ -275,6 +279,148 @@ export class PlaylistService {
     }
 
     return importedCount;
+  }
+
+  // 创建订阅歌单
+  createSubscriptionPlaylist(title: string, searchKeyword: string, description?: string): Playlist {
+    const id = uuidv4();
+    const now = new Date().toISOString();
+
+    getDb().run(`
+      INSERT INTO playlists (id, title, description, playlist_type, search_keyword, created_at, updated_at)
+      VALUES (?, ?, ?, 'subscription', ?, ?, ?)
+    `, [id, title, description || null, searchKeyword, now, now]);
+    saveDatabase();
+
+    return {
+      id,
+      title,
+      description,
+      coverUrl: undefined,
+      playlistType: 'subscription',
+      searchKeyword,
+      songCount: 0,
+      createdAt: now,
+      updatedAt: now
+    };
+  }
+
+  // 同步订阅歌单
+  async syncSubscriptionPlaylist(id: string): Promise<{ addedCount: number; songs: Song[] }> {
+    const playlist = queryOne<any>('SELECT * FROM playlists WHERE id = ? AND playlist_type = ?', [id, 'subscription']);
+    if (!playlist) {
+      return { addedCount: 0, songs: [] };
+    }
+
+    const searchKeyword = playlist.search_keyword;
+    if (!searchKeyword) {
+      return { addedCount: 0, songs: [] };
+    }
+
+    // 解析搜索输入（使用现有的搜索格式）
+    let songs: Song[] = [];
+    const trimmed = searchKeyword.trim();
+
+    // BV号
+    if (/^BV[a-zA-Z0-9]+$/.test(trimmed)) {
+      const info = await bilibiliService.getVideoInfo(trimmed);
+      if (info) {
+        songs = bilibiliService.videoToSongs(info);
+      }
+    } else if (/^\d+$/.test(trimmed)) {
+      // 收藏夹ID - 获取所有页面的歌曲
+      let page = 1;
+      let hasMore = true;
+      while (hasMore) {
+        const result = await bilibiliService.getFavList(trimmed, page);
+        songs.push(...result.songs);
+        hasMore = result.hasMore;
+        page++;
+      }
+    } else if (trimmed.includes('seriesdetail')) {
+      // 系列链接 - 获取所有页面的视频
+      const seriesMatch = trimmed.match(/bilibili\.com\/(\d+)\/channel\/seriesdetail\?sid=(\d+)/);
+      if (seriesMatch) {
+        let page = 1;
+        let hasMore = true;
+        while (hasMore) {
+          const result = await bilibiliService.getSeriesList(seriesMatch[1], seriesMatch[2], page);
+          songs.push(...result);
+          hasMore = result.length >= 30;
+          page++;
+        }
+      }
+    } else if (trimmed.includes('collectiondetail') || trimmed.includes('lists') || trimmed.includes('type=season')) {
+      // 合集链接
+      let mid = '';
+      let sid = '';
+      const colleMatch = trimmed.match(/bilibili\.com\/(\d+)\/channel\/collectiondetail\?sid=(\d+)/);
+      if (colleMatch) {
+        mid = colleMatch[1];
+        sid = colleMatch[2];
+      } else {
+        const seasonMatch = trimmed.match(/bilibili\.com\/(\d+)\/lists\/(\d+)\?type=season/);
+        if (seasonMatch) {
+          mid = seasonMatch[1];
+          sid = seasonMatch[2];
+        }
+      }
+      if (mid && sid) {
+        let page = 1;
+        let hasMore = true;
+        while (hasMore) {
+          const result = await bilibiliService.getCollectionList(mid, sid, page);
+          songs.push(...result);
+          hasMore = result.length >= 30;
+          page++;
+        }
+      }
+    } else {
+      // 系列链接
+      const seriesMatch = trimmed.match(/bilibili\.com\/(\d+)\/channel\/seriesdetail\?sid=(\d+)/);
+      if (seriesMatch) {
+        songs = await bilibiliService.getSeriesList(seriesMatch[1], seriesMatch[2]);
+      } else {
+        // 合集链接
+        const colleMatch = trimmed.match(/bilibili\.com\/(\d+)\/channel\/collectiondetail\?sid=(\d+)/);
+        if (colleMatch) {
+          songs = await bilibiliService.getCollectionList(colleMatch[1], colleMatch[2]);
+        } else {
+          // Season链接
+          const seasonMatch = trimmed.match(/bilibili\.com\/(\d+)\/lists\/(\d+)\?type=season/);
+          if (seasonMatch) {
+            songs = await bilibiliService.getCollectionList(seasonMatch[1], seasonMatch[2]);
+          }
+        }
+      }
+    }
+
+    if (songs.length === 0) {
+      return { addedCount: 0, songs: [] };
+    }
+
+    // 添加到歌单
+    const addedCount = this.addSongsToPlaylist(id, songs);
+
+    // 更新最后同步时间
+    const now = new Date().toISOString();
+    getDb().run('UPDATE playlists SET last_synced_at = ?, updated_at = ? WHERE id = ?', [now, now, id]);
+    saveDatabase();
+
+    return { addedCount, songs };
+  }
+
+  // 同步所有订阅歌单
+  async syncAllSubscriptionPlaylists(): Promise<{ playlistId: string; addedCount: number }[]> {
+    const playlists = queryAll<any>('SELECT id FROM playlists WHERE playlist_type = ?', ['subscription']);
+    const results: { playlistId: string; addedCount: number }[] = [];
+
+    for (const p of playlists) {
+      const result = await this.syncSubscriptionPlaylist(p.id);
+      results.push({ playlistId: p.id, addedCount: result.addedCount });
+    }
+
+    return results;
   }
 }
 

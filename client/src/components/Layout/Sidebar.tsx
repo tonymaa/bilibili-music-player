@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { Menu, Button, Modal, Input, message, Dropdown } from 'antd';
-import { PlusOutlined, FolderOutlined, DeleteOutlined, EditOutlined, MoreOutlined } from '@ant-design/icons';
+import { Menu, Button, Modal, Input, message, Dropdown, Radio } from 'antd';
+import { PlusOutlined, FolderOutlined, DeleteOutlined, EditOutlined, MoreOutlined, SyncOutlined } from '@ant-design/icons';
 import { usePlaylistStore } from '../../stores/playlistStore';
 import { Playlist } from '@shared/types';
 import styles from './Sidebar.module.css';
 
 const Sidebar: React.FC = () => {
-  const { playlists, currentPlaylist, loadPlaylists, loadPlaylistDetail, createPlaylist, deletePlaylist, updatePlaylist } = usePlaylistStore();
+  const { playlists, currentPlaylist, loadPlaylists, loadPlaylistDetail, createPlaylist, createSubscriptionPlaylist, deletePlaylist, updatePlaylist, syncSubscriptionPlaylist } = usePlaylistStore();
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [newPlaylistName, setNewPlaylistName] = useState('');
+  const [newPlaylistType, setNewPlaylistType] = useState<'normal' | 'subscription'>('normal');
+  const [searchKeyword, setSearchKeyword] = useState('');
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [renameModalVisible, setRenameModalVisible] = useState(false);
   const [playlistToDelete, setPlaylistToDelete] = useState<Playlist | null>(null);
@@ -32,11 +34,24 @@ const Sidebar: React.FC = () => {
       return;
     }
 
-    const playlist = await createPlaylist(newPlaylistName.trim());
+    if (newPlaylistType === 'subscription' && !searchKeyword.trim()) {
+      message.warning('请输入搜索关键词');
+      return;
+    }
+
+    let playlist;
+    if (newPlaylistType === 'subscription') {
+      playlist = await createSubscriptionPlaylist(newPlaylistName.trim(), searchKeyword.trim());
+    } else {
+      playlist = await createPlaylist(newPlaylistName.trim());
+    }
+
     if (playlist) {
       message.success('创建成功');
       setCreateModalVisible(false);
       setNewPlaylistName('');
+      setNewPlaylistType('normal');
+      setSearchKeyword('');
     } else {
       message.error('创建失败');
     }
@@ -72,28 +87,49 @@ const Sidebar: React.FC = () => {
     }
   };
 
-  const getPlaylistMenuItems = (playlist: Playlist) => [
-    {
-      key: 'rename',
-      label: '重命名',
-      icon: <EditOutlined />,
-      onClick: () => {
-        setPlaylistToRename(playlist);
-        setRenameValue(playlist.title);
-        setRenameModalVisible(true);
+  const getPlaylistMenuItems = (playlist: Playlist) => {
+    const items = [
+      {
+        key: 'rename',
+        label: '重命名',
+        icon: <EditOutlined />,
+        onClick: () => {
+          setPlaylistToRename(playlist);
+          setRenameValue(playlist.title);
+          setRenameModalVisible(true);
+        }
+      },
+      {
+        key: 'delete',
+        label: '删除',
+        icon: <DeleteOutlined />,
+        danger: true,
+        onClick: () => {
+          setPlaylistToDelete(playlist);
+          setDeleteModalVisible(true);
+        }
       }
-    },
-    {
-      key: 'delete',
-      label: '删除',
-      icon: <DeleteOutlined />,
-      danger: true,
-      onClick: () => {
-        setPlaylistToDelete(playlist);
-        setDeleteModalVisible(true);
-      }
+    ];
+
+    // 订阅歌单添加同步选项
+    if (playlist.playlistType === 'subscription') {
+      items.unshift({
+        key: 'sync',
+        label: '立即同步',
+        icon: <SyncOutlined />,
+        onClick: async () => {
+          const result = await syncSubscriptionPlaylist(playlist.id);
+          if (result) {
+            message.success(`同步成功，新增 ${result.addedCount} 首歌曲`);
+          } else {
+            message.error('同步失败');
+          }
+        }
+      });
     }
-  ];
+
+    return items;
+  };
 
   const menuItems = [
     {
@@ -155,16 +191,31 @@ const Sidebar: React.FC = () => {
         onCancel={() => {
           setCreateModalVisible(false);
           setNewPlaylistName('');
+          setNewPlaylistType('normal');
+          setSearchKeyword('');
         }}
         okText="创建"
         cancelText="取消"
       >
-        <Input
-          placeholder="请输入歌单名称"
-          value={newPlaylistName}
-          onChange={e => setNewPlaylistName(e.target.value)}
-          onPressEnter={handleCreatePlaylist}
-        />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <Input
+            placeholder="请输入歌单名称"
+            value={newPlaylistName}
+            onChange={e => setNewPlaylistName(e.target.value)}
+            onPressEnter={handleCreatePlaylist}
+          />
+          <Radio.Group value={newPlaylistType} onChange={e => setNewPlaylistType(e.target.value)}>
+            <Radio value="normal">普通歌单</Radio>
+            <Radio value="subscription">订阅歌单</Radio>
+          </Radio.Group>
+          {newPlaylistType === 'subscription' && (
+            <Input
+              placeholder="请输入搜索关键词（订阅歌单将每12小时同步一次）"
+              value={searchKeyword}
+              onChange={e => setSearchKeyword(e.target.value)}
+            />
+          )}
+        </div>
       </Modal>
 
       {/* 删除歌单确认对话框 */}

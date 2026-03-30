@@ -12,11 +12,14 @@ interface PlaylistState {
   loadPlaylistDetail: (id: string, page?: number, search?: string) => Promise<void>;
   loadPlaylistAllSongs: (id: string) => Promise<Song[]>;
   createPlaylist: (title: string, description?: string) => Promise<Playlist | null>;
+  createSubscriptionPlaylist: (title: string, searchKeyword: string, description?: string) => Promise<Playlist | null>;
   updatePlaylist: (id: string, data: { title?: string; description?: string }) => Promise<boolean>;
   deletePlaylist: (id: string) => Promise<boolean>;
   addSongsToPlaylist: (playlistId: string, songs: Song[]) => Promise<number>;
   removeSongsFromPlaylist: (playlistId: string, songIds: string[]) => Promise<number>;
   renameSongInPlaylist: (playlistId: string, songId: string, newName: string) => Promise<boolean>;
+  syncSubscriptionPlaylist: (id: string) => Promise<{ addedCount: number; songs: Song[] } | null>;
+  syncAllSubscriptionPlaylists: () => Promise<void>;
 }
 
 export const usePlaylistStore = create<PlaylistState>((set, get) => ({
@@ -54,6 +57,16 @@ export const usePlaylistStore = create<PlaylistState>((set, get) => ({
 
   createPlaylist: async (title, description) => {
     const res = await playlistApi.createPlaylist(title, description);
+    if (res.code === 0 && res.data) {
+      const { playlists } = get();
+      set({ playlists: [res.data, ...playlists] });
+      return res.data;
+    }
+    return null;
+  },
+
+  createSubscriptionPlaylist: async (title, searchKeyword, description) => {
+    const res = await playlistApi.createSubscriptionPlaylist(title, searchKeyword, description);
     if (res.code === 0 && res.data) {
       const { playlists } = get();
       set({ playlists: [res.data, ...playlists] });
@@ -121,5 +134,25 @@ export const usePlaylistStore = create<PlaylistState>((set, get) => ({
       return true;
     }
     return false;
+  },
+
+  syncSubscriptionPlaylist: async (id) => {
+    const res = await playlistApi.syncSubscriptionPlaylist(id);
+    if (res.code === 0 && res.data) {
+      await get().loadPlaylists();
+      const { currentPlaylist } = get();
+      if (currentPlaylist?.id === id) {
+        await get().loadPlaylistDetail(id);
+      }
+      return res.data;
+    }
+    return null;
+  },
+
+  syncAllSubscriptionPlaylists: async () => {
+    const res = await playlistApi.syncAllSubscriptionPlaylists();
+    if (res.code === 0) {
+      await get().loadPlaylists();
+    }
   }
 }));

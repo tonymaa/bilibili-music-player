@@ -60,3 +60,22 @@ export async function exportData(): Promise<ApiResponse<{ playlists: PlaylistDet
 export async function importData(playlists: PlaylistDetail[]): Promise<ApiResponse<{ importedCount: number }>> {
   return post('/playlists/import', { playlists });
 }
+
+// 创建订阅歌单
+export async function createSubscriptionPlaylist(
+  title: string,
+  searchKeyword: string,
+  description?: string
+): Promise<ApiResponse<Playlist>> {
+  return post('/playlists', { title, description, playlistType: 'subscription', searchKeyword });
+}
+
+// 同步订阅歌单
+export async function syncSubscriptionPlaylist(id: string): Promise<ApiResponse<{ addedCount: number; songs: Song[] }>> {
+  return post(`/playlists/${id}/sync`);
+}
+
+// 同步所有订阅歌单
+export async function syncAllSubscriptionPlaylists(): Promise<ApiResponse<{ playlistId: string; addedCount: number }[]>> {
+  return post('/playlists/sync/all');
+}

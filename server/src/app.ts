@@ -2,9 +2,11 @@ import express from 'express';
 import cors from 'cors';
 import { initDatabase } from './config/database';
 import routes from './routes';
+import { playlistService } from './services/PlaylistService';
 
 const app = express();
 const PORT = process.env.PORT || 17600;
+const SYNC_INTERVAL = 12 * 60 * 60 * 1000; // 12小时
 
 // 启动服务器
 async function startServer() {
@@ -34,6 +36,29 @@ async function startServer() {
       console.log(`Server is running on http://localhost:${PORT}`);
       console.log(`API endpoint: http://localhost:${PORT}/api`);
     });
+
+    // 启动订阅歌单定时同步（每12小时）
+    setInterval(async () => {
+      console.log('[Scheduler] 开始同步订阅歌单...');
+      try {
+        const results = await playlistService.syncAllSubscriptionPlaylists();
+        console.log('[Scheduler] 同步完成:', results);
+      } catch (error) {
+        console.error('[Scheduler] 同步失败:', error);
+      }
+    }, SYNC_INTERVAL);
+
+    // 启动后立即同步一次（延迟30秒执行）
+    setTimeout(async () => {
+      console.log('[Scheduler] 首次同步订阅歌单...');
+      try {
+        const results = await playlistService.syncAllSubscriptionPlaylists();
+        console.log('[Scheduler] 首次同步完成:', results);
+      } catch (error) {
+        console.error('[Scheduler] 首次同步失败:', error);
+      }
+    }, 30000);
+
   } catch (error) {
     console.error('Failed to start server:', error);
     process.exit(1);

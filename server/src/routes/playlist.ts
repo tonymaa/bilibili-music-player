@@ -38,10 +38,19 @@ router.get('/:id/songs', (req: Request, res: Response) => {
 
 // 创建歌单
 router.post('/', (req: Request, res: Response) => {
-  const { title, description } = req.body;
+  const { title, description, playlistType, searchKeyword } = req.body;
 
   if (!title) {
     return res.json({ code: -1, message: '歌单名称不能为空' });
+  }
+
+  // 订阅歌单需要搜索关键词
+  if (playlistType === 'subscription') {
+    if (!searchKeyword) {
+      return res.json({ code: -1, message: '订阅歌单需要搜索关键词' });
+    }
+    const playlist = playlistService.createSubscriptionPlaylist(title, searchKeyword, description);
+    return res.json({ code: 0, data: playlist });
   }
 
   const playlist = playlistService.createPlaylist(title, description);
@@ -134,6 +143,20 @@ router.post('/import', (req: Request, res: Response) => {
 
   const importedCount = playlistService.importData({ playlists });
   res.json({ code: 0, importedCount });
+});
+
+// 同步订阅歌单
+router.post('/:id/sync', async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  const result = await playlistService.syncSubscriptionPlaylist(id);
+  res.json({ code: 0, data: result });
+});
+
+// 同步所有订阅歌单
+router.post('/sync/all', async (req: Request, res: Response) => {
+  const results = await playlistService.syncAllSubscriptionPlaylists();
+  res.json({ code: 0, data: results });
 });
 
 export default router;
