@@ -13,6 +13,23 @@ export class PlayerService {
     };
   }
 
+  // 获取全局配置
+  getAppSetting(key: string): string | null {
+    const row = queryOne<any>('SELECT value FROM app_settings WHERE key = ?', [key]);
+    return row?.value || null;
+  }
+
+  // 设置全局配置
+  setAppSetting(key: string, value: string): void {
+    const now = new Date().toISOString();
+    getDb().run(`
+      INSERT INTO app_settings (key, value, updated_at)
+      VALUES (?, ?, ?)
+      ON CONFLICT(key) DO UPDATE SET value = ?, updated_at = ?
+    `, [key, value, now, value, now]);
+    saveDatabase();
+  }
+
   // 更新播放器设置
   updateSettings(settings: Partial<PlayerSettings>): PlayerSettings {
     const now = new Date().toISOString();

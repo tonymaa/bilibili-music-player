@@ -200,7 +200,7 @@ export class PlaylistService {
     return true;
   }
 
-  // 添加歌曲到歌单（新增歌曲放在最前面）
+  // 添加歌曲到歌单（新增歌曲放在最后面）
   addSongsToPlaylist(playlistId: string, songs: Song[]): number {
     const playlist = queryOne<any>('SELECT * FROM playlists WHERE id = ?', [playlistId]);
     if (!playlist) return 0;
@@ -208,20 +208,12 @@ export class PlaylistService {
     let addedCount = 0;
     const now = new Date().toISOString();
 
-    // 获取当前最小排序号
-    const minOrderResult = getDb().exec(
-      'SELECT COALESCE(MIN(sort_order), 0) as min_order FROM playlist_songs WHERE playlist_id = ?',
+    // 获取当前最大排序号
+    const maxOrderResult = getDb().exec(
+      'SELECT COALESCE(MAX(sort_order), 0) as max_order FROM playlist_songs WHERE playlist_id = ?',
       [playlistId]
     );
-    let sortOrder = (minOrderResult[0]?.values[0]?.[0] as number) || 0;
-
-    // 先把所有现有歌曲的排序号后移一位
-    if (sortOrder !== 0) {
-      getDb().run(
-        'UPDATE playlist_songs SET sort_order = sort_order + 1 WHERE playlist_id = ?',
-        [playlistId]
-      );
-    }
+    let sortOrder = (maxOrderResult[0]?.values[0]?.[0] as number) || 0;
 
     for (const song of songs) {
       // 检查歌曲是否已存在
@@ -242,18 +234,12 @@ export class PlaylistService {
       );
 
       if (!inPlaylist) {
-        sortOrder--;
+        sortOrder++;
         getDb().run(`
           INSERT INTO playlist_songs (playlist_id, song_id, sort_order, added_at)
           VALUES (?, ?, ?, ?)
         `, [playlistId, song.id, sortOrder, now]);
         addedCount++;
-      } else {
-        // 如果歌曲已存在，提到最前面
-        getDb().run(
-          'UPDATE playlist_songs SET sort_order = sort_order + 1 WHERE playlist_id = ? AND song_id = ?',
-          [playlistId, song.id]
-        );
       }
     }
 

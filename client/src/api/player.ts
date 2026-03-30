@@ -35,3 +35,13 @@ export async function clearAllProgress(): Promise<ApiResponse> {
 export async function deleteProgress(songId: string): Promise<ApiResponse> {
   return del(`/player/progress/${songId}`);
 }
+
+// 获取全局配置
+export async function getAppConfig(key: string): Promise<ApiResponse<{ value: string }>> {
+  return get(`/player/config/${key}`);
+}
+
+// 设置全局配置
+export async function setAppConfig(key: string, value: string): Promise<ApiResponse> {
+  return put(`/player/config/${key}`, { value });
+}

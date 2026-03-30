@@ -41,6 +41,21 @@ router.get('/unfinished', (req: Request, res: Response) => {
   res.json({ code: 0, data: songs });
 });
 
+// 获取全局配置
+router.get('/config/:key', (req: Request, res: Response) => {
+  const { key } = req.params;
+  const value = playerService.getAppSetting(key);
+  res.json({ code: 0, data: { value } });
+});
+
+// 设置全局配置
+router.put('/config/:key', (req: Request, res: Response) => {
+  const { key } = req.params;
+  const { value } = req.body;
+  playerService.setAppSetting(key, value);
+  res.json({ code: 0, message: '保存成功' });
+});
+
 // 清空所有播放进度
 router.delete('/progress', (req: Request, res: Response) => {
   playerService.clearAllProgress();

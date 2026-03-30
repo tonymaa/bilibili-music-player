@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Input, Button, Space, Tooltip, Popover, List } from 'antd';
+import { Layout, Input, Button, Space, Tooltip, Popover, List, Switch } from 'antd';
 import { SearchOutlined, SettingOutlined, DownloadOutlined, UploadOutlined, ClockCircleOutlined, DeleteOutlined, PlayCircleOutlined } from '@ant-design/icons';
 import { usePlaylistStore } from '../../stores/playlistStore';
 import { usePlayerStore } from '../../stores/playerStore';
@@ -27,7 +27,7 @@ const formatTime = (seconds: number): string => {
 const Header: React.FC = () => {
   const [showSearch, setShowSearch] = useState(false);
   const { exportData, importData } = usePlaylistStore();
-  const { unfinishedSongs, loadUnfinishedSongs, playSong, setPlaylist, clearAllProgress, deleteSongProgress } = usePlayerStore();
+  const { unfinishedSongs, loadUnfinishedSongs, playSong, setPlaylist, clearAllProgress, deleteSongProgress, autoSeekToProgress, setAutoSeekToProgress } = usePlayerStore();
 
   // 加载未播放完的歌曲
   useEffect(() => {
@@ -72,6 +72,10 @@ const Header: React.FC = () => {
             清空
           </Button>
         </Space>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, padding: '8px 12px', background: '#f5f5f5', borderRadius: 4 }}>
+        <span>自动跳转进度条</span>
+        <Switch size="small" checked={autoSeekToProgress} onChange={setAutoSeekToProgress} />
       </div>
       {unfinishedSongs.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 20, color: '#999' }}>暂无未播放完的歌曲</div>

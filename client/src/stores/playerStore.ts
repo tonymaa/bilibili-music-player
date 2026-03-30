@@ -47,6 +47,9 @@ interface PlayerState {
   // 待跳转的播放时间（用于 duration 加载完成前）
   pendingSeekTime: number;
 
+  // 是否自动跳转到进度条
+  autoSeekToProgress: boolean;
+
   // 历史记录
   history: Song[];
 
@@ -69,6 +72,7 @@ interface PlayerState {
   saveProgress: () => void;
   loadProgress: (songId: string) => Promise<number>;
   setPendingSeekTime: (time: number) => void;
+  setAutoSeekToProgress: (enabled: boolean) => void;
   addToHistory: (song: Song) => void;
   removeFromHistory: (index: number) => void;
   clearHistory: () => void;
@@ -93,6 +97,7 @@ export const usePlayerStore = create<PlayerState>()(
       audioElement: null,
       loadingBvid: null,
       pendingSeekTime: 0,
+      autoSeekToProgress: true,
       history: [],
       unfinishedSongs: [],
 
@@ -238,9 +243,12 @@ export const usePlayerStore = create<PlayerState>()(
       const res = await bilibiliApi.getPlayUrl(song.bvid, cid);
       if (res.code === 0 && res.data?.audioUrl) {
         // 先加载保存的进度（要在设置 src 之前，这样 loadedmetadata 触发时 pendingSeekTime 已经设置好了）
-        const progress = await get().loadProgress(song.id);
-        if (progress > 1) {
-          set({ pendingSeekTime: progress });
+        const { autoSeekToProgress } = get();
+        if (autoSeekToProgress) {
+          const progress = await get().loadProgress(song.id);
+          if (progress > 1) {
+            set({ pendingSeekTime: progress });
+          }
         }
 
         // 通过后端代理播放，避免 403
@@ -368,6 +376,12 @@ export const usePlayerStore = create<PlayerState>()(
         audioElement.volume = volume ?? 0.5;
       }
     }
+
+    // 加载全局配置
+    const configRes = await playerApi.getAppConfig('autoSeekToProgress');
+    if (configRes.code === 0 && configRes.data) {
+      set({ autoSeekToProgress: configRes.data.value === 'true' });
+    }
   },
 
   saveProgress: () => {
@@ -384,6 +398,11 @@ export const usePlayerStore = create<PlayerState>()(
 
   setPendingSeekTime: (time) => {
     set({ pendingSeekTime: time });
+  },
+
+  setAutoSeekToProgress: (enabled) => {
+    set({ autoSeekToProgress: enabled });
+    playerApi.setAppConfig('autoSeekToProgress', enabled ? 'true' : 'false');
   },
 
   addToHistory: (song) => {

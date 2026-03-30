@@ -93,6 +93,21 @@ export async function initDatabase(): Promise<Database> {
     db.run('INSERT INTO player_settings (id) VALUES (1)');
   }
 
+  // 全局配置表
+  db.run(`
+    CREATE TABLE IF NOT EXISTS app_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // 初始化默认值
+  const appSettings = db.exec('SELECT * FROM app_settings WHERE key = "autoSeekToProgress"');
+  if (appSettings.length === 0 || appSettings[0].values.length === 0) {
+    db.run('INSERT INTO app_settings (key, value) VALUES ("autoSeekToProgress", "true")');
+  }
+
   // 迁移 playlists 表添加新字段
   migratePlaylists(db);
 
