@@ -199,8 +199,20 @@ export const usePlayerStore = create<PlayerState>()(
   },
 
   playSong: async (song) => {
-    const { audioElement, playlist, shuffledPlaylist, playMode, loadingBvid } = get();
-    if (!audioElement) return;
+    let { audioElement, playlist, shuffledPlaylist, playMode, loadingBvid } = get();
+
+    // 如果 audioElement 还没初始化，等待它
+    if (!audioElement) {
+      // 最多等待 3 秒
+      for (let i = 0; i < 30 && !audioElement; i++) {
+        await new Promise<void>(r => setTimeout(r, 100));
+        audioElement = get().audioElement;
+      }
+      if (!audioElement) {
+        console.error('[Player] Audio element not available');
+        return;
+      }
+    }
 
     // 防止重复请求：如果正在加载同一个 bvid，直接返回
     if (loadingBvid === song.bvid) {
@@ -208,12 +220,14 @@ export const usePlayerStore = create<PlayerState>()(
       return;
     }
 
-    // 如果当前播放的就是这首歌，直接播放
-    if (get().currentSong?.id === song.id && audioElement.src) {
+    // 如果当前播放的就是这首歌，且音频 src 包含这首歌的 bvid，直接播放
+    const currentSrc = audioElement.src;
+    const isSameSong = get().currentSong?.id === song.id && currentSrc && currentSrc.includes(song.bvid);
+    if (isSameSong && !loadingBvid) {
       const currentList = playMode === 'shuffle' ? shuffledPlaylist : playlist;
       const index = currentList.findIndex(s => s.id === song.id);
       set({ currentSong: song, currentIndex: index >= 0 ? index : 0, isPlaying: true });
-      await audioElement.play().catch(console.error);
+      try { await audioElement.play(); } catch {}
       return;
     }
 
@@ -235,12 +249,10 @@ export const usePlayerStore = create<PlayerState>()(
 
       // 取第一个分P的 cid（多P视频暂不支持选择）
       const cid = String(part.cid);
-      console.log('[Player] Got cid:', cid, 'for bvid:', song.bvid);
-      // console.log('song>>>', song);
-      
 
       // 通过后端代理获取音频 URL
       const res = await bilibiliApi.getPlayUrl(song.bvid, cid);
+
       if (res.code === 0 && res.data?.audioUrl) {
         // 先加载保存的进度（要在设置 src 之前，这样 loadedmetadata 触发时 pendingSeekTime 已经设置好了）
         const { autoSeekToProgress } = get();
@@ -267,7 +279,21 @@ export const usePlayerStore = create<PlayerState>()(
         // 添加到播放历史
         get().addToHistory(song);
 
-        await audioElement.play().catch(console.error);
+        // 确保音频元数据加载后再播放
+        if (audioElement.readyState >= 1) {
+          try { await audioElement.play(); } catch {}
+        } else {
+          await new Promise<void>(resolve => {
+            const onLoaded = () => {
+              audioElement.removeEventListener('loadedmetadata', onLoaded);
+              resolve();
+            };
+            audioElement.addEventListener('loadedmetadata', onLoaded);
+            // 超时保护
+            setTimeout(() => resolve(), 5000);
+          });
+          try { await audioElement.play(); } catch {}
+        }
 
         // 保存设置
         playerApi.updatePlayerSettings({ lastSongId: song.id });
