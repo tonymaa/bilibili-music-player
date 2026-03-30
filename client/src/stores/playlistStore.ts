@@ -68,8 +68,8 @@ export const usePlaylistStore = create<PlaylistState>((set, get) => ({
   createSubscriptionPlaylist: async (title, searchKeyword, description) => {
     const res = await playlistApi.createSubscriptionPlaylist(title, searchKeyword, description);
     if (res.code === 0 && res.data) {
-      const { playlists } = get();
-      set({ playlists: [res.data, ...playlists] });
+      // 刷新歌单列表以获取最新歌曲
+      await get().loadPlaylists();
       return res.data;
     }
     return null;

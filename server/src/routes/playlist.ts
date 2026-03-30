@@ -37,7 +37,7 @@ router.get('/:id/songs', (req: Request, res: Response) => {
 });
 
 // 创建歌单
-router.post('/', (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response) => {
   const { title, description, playlistType, searchKeyword } = req.body;
 
   if (!title) {
@@ -50,7 +50,10 @@ router.post('/', (req: Request, res: Response) => {
       return res.json({ code: -1, message: '订阅歌单需要搜索关键词' });
     }
     const playlist = playlistService.createSubscriptionPlaylist(title, searchKeyword, description);
-    return res.json({ code: 0, data: playlist });
+
+    // 创建后立即同步一次
+    const syncResult = await playlistService.syncSubscriptionPlaylist(playlist.id);
+    return res.json({ code: 0, data: { ...playlist, syncResult } });
   }
 
   const playlist = playlistService.createPlaylist(title, description);
