@@ -224,12 +224,18 @@ export const usePlayerStore = create<PlayerState>()(
         return;
       }
 
+      const part = infoRes.data.info.pages.find(p => {
+        return p.part === song.name
+      }) ?? infoRes.data.info.pages[0];
+
       // 取第一个分P的 cid（多P视频暂不支持选择）
-      const cid = String(infoRes.data.info.pages[0].cid);
+      const cid = String(part.cid);
       console.log('[Player] Got cid:', cid, 'for bvid:', song.bvid);
+      // console.log('song>>>', song);
+      
 
       // 通过后端代理获取音频 URL
-      const res = await bilibiliApi.getPlayUrl(song.bvid, song.id);
+      const res = await bilibiliApi.getPlayUrl(song.bvid, cid);
       if (res.code === 0 && res.data?.audioUrl) {
         // 先加载保存的进度（要在设置 src 之前，这样 loadedmetadata 触发时 pendingSeekTime 已经设置好了）
         const progress = await get().loadProgress(song.id);
