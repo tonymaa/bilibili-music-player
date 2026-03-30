@@ -212,7 +212,7 @@ const PlaylistTable: React.FC = () => {
               if (currentPlaylist) {
                 const allSongs = await loadPlaylistAllSongs(currentPlaylist.id);
                 const { setPlaylist } = usePlayerStore.getState();
-                setPlaylist(allSongs, true);
+                setPlaylist([...allSongs].reverse(), true);
               }
             }}
           >

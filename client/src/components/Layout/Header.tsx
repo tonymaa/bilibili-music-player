@@ -48,7 +48,7 @@ const Header: React.FC = () => {
 
   const handlePlayAllUnfinished = () => {
     if (unfinishedSongs.length > 0) {
-      setPlaylist(unfinishedSongs.map(u => u.song), true);
+      setPlaylist([...unfinishedSongs.map(u => u.song)].reverse(), true);
     }
   };
 
