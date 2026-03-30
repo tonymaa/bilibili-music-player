@@ -1,5 +1,29 @@
 import React, { useEffect, useRef } from 'react';
 import { Slider, Button, Tooltip, Dropdown, Popover } from 'antd';
+
+// Media Session API 类型声明
+declare global {
+  interface Navigator {
+    mediaSession?: MediaSession;
+  }
+}
+
+interface MediaSession {
+  metadata: MediaMetadata | null;
+  playbackState: 'none' | 'playing' | 'paused';
+  setActionHandler(action: string, handler: (() => void) | null): void;
+}
+
+interface MediaMetadata {
+  title: string | null;
+  artist: string | null;
+  album: string | null;
+  artwork: { src: string; sizes: string; type: string }[];
+}
+
+declare var MediaMetadata: {
+  new (init: { title?: string; artist?: string; album?: string; artwork?: { src: string; sizes?: string; type?: string }[] }): MediaMetadata;
+};
 import {
   PlayCircleOutlined,
   PauseCircleOutlined,
@@ -144,6 +168,62 @@ const AudioPlayer: React.FC<{ onOpenPlayerPanel?: () => void }> = ({ onOpenPlaye
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [volume, duration]);
+
+  // Media Session API - 系统任务栏媒体控制
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return;
+
+    if (currentSong) {
+      // 更新媒体信息
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: currentSong.name,
+        artist: currentSong.singer,
+        album: currentSong.name,
+        artwork: [
+          {
+            src: proxyImage(currentSong.cover),
+            sizes: '512x512',
+            type: 'image/jpeg'
+          }
+        ]
+      });
+
+      // 设置播放/暂停的处理程序
+      navigator.mediaSession.setActionHandler('play', () => togglePlay());
+      navigator.mediaSession.setActionHandler('pause', () => togglePlay());
+      navigator.mediaSession.setActionHandler('previoustrack', () => playPrev());
+      navigator.mediaSession.setActionHandler('nexttrack', () => playNext());
+      navigator.mediaSession.setActionHandler('seekbackward', () => {
+        if (audioRef.current) {
+          audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - 5);
+        }
+      });
+      navigator.mediaSession.setActionHandler('seekforward', () => {
+        if (audioRef.current) {
+          audioRef.current.currentTime = Math.min(duration, audioRef.current.currentTime + 5);
+        }
+      });
+    } else {
+      navigator.mediaSession.metadata = null;
+    }
+
+    return () => {
+      if ('mediaSession' in navigator) {
+        navigator.mediaSession.metadata = null;
+      }
+    };
+  }, [currentSong, duration]);
+
+  // 更新播放状态
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return;
+
+    if (navigator.mediaSession.metadata && isPlaying) {
+      navigator.mediaSession.playbackState = 'playing';
+    } else {
+      navigator.mediaSession.playbackState = 'paused';
+    }
+  }, [isPlaying]);
 
   // Audio 事件处理
   const handleTimeUpdate = () => {

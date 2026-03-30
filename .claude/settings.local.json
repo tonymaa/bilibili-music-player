@@ -3,7 +3,8 @@
     "allow": [
       "Bash(curl -s http://localhost:17600/api/playlists)",
       "mcp__chrome-devtools__take_screenshot",
-      "mcp__chrome-devtools__take_snapshot"
+      "mcp__chrome-devtools__take_snapshot",
+      "Bash(npx tsc:*)"
     ]
   }
 }
