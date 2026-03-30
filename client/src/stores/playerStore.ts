@@ -229,7 +229,7 @@ export const usePlayerStore = create<PlayerState>()(
       console.log('[Player] Got cid:', cid, 'for bvid:', song.bvid);
 
       // 通过后端代理获取音频 URL
-      const res = await bilibiliApi.getPlayUrl(song.bvid, cid);
+      const res = await bilibiliApi.getPlayUrl(song.bvid, song.id);
       if (res.code === 0 && res.data?.audioUrl) {
         // 先加载保存的进度（要在设置 src 之前，这样 loadedmetadata 触发时 pendingSeekTime 已经设置好了）
         const progress = await get().loadProgress(song.id);
