@@ -160,18 +160,31 @@ export class PlaylistService {
   }
 
   // 更新歌单
-  updatePlaylist(id: string, title?: string, description?: string): Playlist | null {
+  updatePlaylist(id: string, title?: string, description?: string, searchKeyword?: string): Playlist | null {
     const playlist = queryOne<any>('SELECT * FROM playlists WHERE id = ?', [id]);
     if (!playlist) return null;
 
     const now = new Date().toISOString();
-    getDb().run(`
-      UPDATE playlists
-      SET title = COALESCE(?, title),
-          description = COALESCE(?, description),
-          updated_at = ?
-      WHERE id = ?
-    `, [title || null, description || null, now, id]);
+
+    // 如果是订阅歌单，可以更新searchKeyword
+    if (playlist.playlist_type === 'subscription' && searchKeyword !== undefined) {
+      getDb().run(`
+        UPDATE playlists
+        SET title = COALESCE(?, title),
+            description = COALESCE(?, description),
+            search_keyword = ?,
+            updated_at = ?
+        WHERE id = ?
+      `, [title || null, description || null, searchKeyword, now, id]);
+    } else {
+      getDb().run(`
+        UPDATE playlists
+        SET title = COALESCE(?, title),
+            description = COALESCE(?, description),
+            updated_at = ?
+        WHERE id = ?
+      `, [title || null, description || null, now, id]);
+    }
     saveDatabase();
 
     return this.getAllPlaylists().find(p => p.id === id) || null;

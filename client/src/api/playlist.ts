@@ -27,7 +27,7 @@ export async function createPlaylist(title: string, description?: string): Promi
 }
 
 // 更新歌单
-export async function updatePlaylist(id: string, data: { title?: string; description?: string }): Promise<ApiResponse<Playlist>> {
+export async function updatePlaylist(id: string, data: { title?: string; description?: string; searchKeyword?: string }): Promise<ApiResponse<Playlist>> {
   return put(`/playlists/${id}`, data);
 }
 

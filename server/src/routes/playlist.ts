@@ -63,9 +63,9 @@ router.post('/', async (req: Request, res: Response) => {
 // 更新歌单
 router.put('/:id', (req: Request, res: Response) => {
   const { id } = req.params;
-  const { title, description } = req.body;
+  const { title, description, searchKeyword } = req.body;
 
-  const playlist = playlistService.updatePlaylist(id, title, description);
+  const playlist = playlistService.updatePlaylist(id, title, description, searchKeyword);
 
   if (!playlist) {
     return res.json({ code: -1, message: '歌单不存在' });

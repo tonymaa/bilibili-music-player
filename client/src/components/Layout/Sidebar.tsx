@@ -16,6 +16,7 @@ const Sidebar: React.FC = () => {
   const [playlistToDelete, setPlaylistToDelete] = useState<Playlist | null>(null);
   const [playlistToRename, setPlaylistToRename] = useState<Playlist | null>(null);
   const [renameValue, setRenameValue] = useState('');
+  const [renameKeyword, setRenameKeyword] = useState('');
 
   useEffect(() => {
     loadPlaylists();
@@ -76,14 +77,20 @@ const Sidebar: React.FC = () => {
       return;
     }
 
-    const success = await updatePlaylist(playlistToRename.id, { title: renameValue.trim() });
+    const data: { title: string; searchKeyword?: string } = { title: renameValue.trim() };
+    if (playlistToRename.playlistType === 'subscription' && renameKeyword.trim()) {
+      data.searchKeyword = renameKeyword.trim();
+    }
+
+    const success = await updatePlaylist(playlistToRename.id, data);
     if (success) {
-      message.success('重命名成功');
+      message.success('更新成功');
       setRenameModalVisible(false);
       setPlaylistToRename(null);
       setRenameValue('');
+      setRenameKeyword('');
     } else {
-      message.error('重命名失败');
+      message.error('更新失败');
     }
   };
 
@@ -96,6 +103,7 @@ const Sidebar: React.FC = () => {
         onClick: () => {
           setPlaylistToRename(playlist);
           setRenameValue(playlist.title);
+          setRenameKeyword(playlist.searchKeyword || '');
           setRenameModalVisible(true);
         }
       },
@@ -234,25 +242,35 @@ const Sidebar: React.FC = () => {
         <p>确定要删除歌单 "{playlistToDelete?.title}" 吗？</p>
       </Modal>
 
-      {/* 重命名歌单对话框 */}
+      {/* 重命名/编辑歌单对话框 */}
       <Modal
-        title="重命名歌单"
+        title={playlistToRename?.playlistType === 'subscription' ? '编辑同步歌单' : '重命名歌单'}
         open={renameModalVisible}
         onOk={handleRenamePlaylist}
         onCancel={() => {
           setRenameModalVisible(false);
           setPlaylistToRename(null);
           setRenameValue('');
+          setRenameKeyword('');
         }}
         okText="确定"
         cancelText="取消"
       >
-        <Input
-          placeholder="请输入歌单名称"
-          value={renameValue}
-          onChange={e => setRenameValue(e.target.value)}
-          onPressEnter={handleRenamePlaylist}
-        />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <Input
+            placeholder="请输入歌单名称"
+            value={renameValue}
+            onChange={e => setRenameValue(e.target.value)}
+            onPressEnter={handleRenamePlaylist}
+          />
+          {playlistToRename?.playlistType === 'subscription' && (
+            <Input
+              placeholder="请输入搜索关键词（BV号、收藏夹ID或B站链接）"
+              value={renameKeyword}
+              onChange={e => setRenameKeyword(e.target.value)}
+            />
+          )}
+        </div>
       </Modal>
     </div>
   );

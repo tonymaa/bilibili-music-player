@@ -13,7 +13,7 @@ interface PlaylistState {
   loadPlaylistAllSongs: (id: string) => Promise<Song[]>;
   createPlaylist: (title: string, description?: string) => Promise<Playlist | null>;
   createSubscriptionPlaylist: (title: string, searchKeyword: string, description?: string) => Promise<Playlist | null>;
-  updatePlaylist: (id: string, data: { title?: string; description?: string }) => Promise<boolean>;
+  updatePlaylist: (id: string, data: { title?: string; description?: string; searchKeyword?: string }) => Promise<boolean>;
   deletePlaylist: (id: string) => Promise<boolean>;
   addSongsToPlaylist: (playlistId: string, songs: Song[]) => Promise<number>;
   removeSongsFromPlaylist: (playlistId: string, songIds: string[]) => Promise<number>;
