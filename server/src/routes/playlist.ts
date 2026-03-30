@@ -12,13 +12,14 @@ router.get('/', (req: Request, res: Response) => {
 // 获取歌单详情
 router.get('/:id', (req: Request, res: Response) => {
   const { id } = req.params;
-  const { page = 1, pageSize = 50, search } = req.query;
+  const { page = 1, pageSize = 50, search, sort } = req.query;
 
   const playlist = playlistService.getPlaylistById(
     id,
     Number(page),
     Number(pageSize),
-    search as string
+    search as string,
+    sort as string
   );
 
   if (!playlist) {

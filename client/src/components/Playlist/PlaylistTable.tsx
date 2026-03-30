@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Button, Space, Popconfirm, Input, message, Dropdown, Modal } from 'antd';
-import { PlayCircleOutlined, PlusOutlined, DeleteOutlined, EditOutlined, MoreOutlined } from '@ant-design/icons';
+import { Table, Button, Space, Popconfirm, Input, message, Dropdown, Modal, Tooltip } from 'antd';
+import { PlayCircleOutlined, PlusOutlined, DeleteOutlined, EditOutlined, MoreOutlined, SortAscendingOutlined, SortDescendingOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { usePlaylistStore } from '../../stores/playlistStore';
 import { usePlayerStore } from '../../stores/playerStore';
@@ -16,6 +16,7 @@ const PlaylistTable: React.FC = () => {
   const [songToRename, setSongToRename] = useState<Song | null>(null);
   const [newSongName, setNewSongName] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   // 切换歌单时重置页码
   useEffect(() => {
@@ -31,9 +32,6 @@ const PlaylistTable: React.FC = () => {
   }
 
   const songs = currentPlaylist.songs || [];
-  const filteredSongs = searchText
-    ? songs.filter(s => s.name.toLowerCase().includes(searchText.toLowerCase()) || s.singer.toLowerCase().includes(searchText.toLowerCase()))
-    : songs;
   const total = currentPlaylist.total || currentPlaylist.songCount || 0;
 
   const handlePlay = (song: Song) => {
@@ -44,7 +42,15 @@ const PlaylistTable: React.FC = () => {
     setSearchText(value);
     setCurrentPage(1);
     if (currentPlaylist) {
-      loadPlaylistDetail(currentPlaylist.id, 1, value || undefined);
+      loadPlaylistDetail(currentPlaylist.id, 1, value || undefined, sortOrder);
+    }
+  };
+
+  const handleSortChange = () => {
+    const newSort = sortOrder === 'asc' ? 'desc' : 'asc';
+    setSortOrder(newSort);
+    if (currentPlaylist) {
+      loadPlaylistDetail(currentPlaylist.id, currentPage, searchText || undefined, newSort);
     }
   };
 
@@ -165,6 +171,12 @@ const PlaylistTable: React.FC = () => {
       <div className={styles.header}>
         <h2 className={styles.title}>{currentPlaylist.title}</h2>
         <div className={styles.actions}>
+          <Tooltip title={sortOrder === 'asc' ? '正序' : '倒序'}>
+            <Button
+              icon={sortOrder === 'asc' ? <SortAscendingOutlined /> : <SortDescendingOutlined />}
+              onClick={handleSortChange}
+            />
+          </Tooltip>
           <Input.Search
             placeholder="搜索歌曲"
             value={searchText}
@@ -212,7 +224,7 @@ const PlaylistTable: React.FC = () => {
       <Table
         rowKey="id"
         columns={columns}
-        dataSource={filteredSongs}
+        dataSource={songs}
         rowSelection={rowSelection}
         pagination={{
           current: currentPage,
@@ -223,7 +235,7 @@ const PlaylistTable: React.FC = () => {
           onChange: (page) => {
             setCurrentPage(page);
             if (currentPlaylist) {
-              loadPlaylistDetail(currentPlaylist.id, page, searchText || undefined);
+              loadPlaylistDetail(currentPlaylist.id, page, searchText || undefined, sortOrder);
             }
           }
         }}

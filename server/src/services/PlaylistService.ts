@@ -38,7 +38,7 @@ export class PlaylistService {
   }
 
   // 获取歌单详情
-  getPlaylistById(id: string, page = 1, pageSize = 50, search?: string): PlaylistDetail | null {
+  getPlaylistById(id: string, page = 1, pageSize = 50, search?: string, sort?: string): PlaylistDetail | null {
     const playlist = queryOne<any>('SELECT * FROM playlists WHERE id = ?', [id]);
     if (!playlist) return null;
 
@@ -55,7 +55,9 @@ export class PlaylistService {
       params.push(`%${search}%`, `%${search}%`);
     }
 
-    sql += ' ORDER BY ps.sort_order ASC, ps.added_at DESC';
+    // sort: asc 正序, desc 倒序（默认）
+    const sortOrder = sort === 'asc' ? 'ASC' : 'DESC';
+    sql += ` ORDER BY ps.sort_order ${sortOrder}, ps.added_at DESC`;
 
     // 先计算总数
     const countResult = getDb().exec(

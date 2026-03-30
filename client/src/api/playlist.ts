@@ -11,9 +11,10 @@ export async function getPlaylistDetail(
   id: string,
   page = 1,
   pageSize = 50,
-  search?: string
+  search?: string,
+  sort?: string
 ): Promise<ApiResponse<PlaylistDetail>> {
-  return get(`/playlists/${id}`, { page, pageSize, search });
+  return get(`/playlists/${id}`, { page, pageSize, search, sort });
 }
 
 // 获取歌单所有歌曲（不分页）

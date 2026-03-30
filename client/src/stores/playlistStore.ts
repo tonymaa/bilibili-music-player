@@ -9,7 +9,7 @@ interface PlaylistState {
 
   // Actions
   loadPlaylists: () => Promise<void>;
-  loadPlaylistDetail: (id: string, page?: number, search?: string) => Promise<void>;
+  loadPlaylistDetail: (id: string, page?: number, search?: string, sort?: string) => Promise<void>;
   loadPlaylistAllSongs: (id: string) => Promise<Song[]>;
   createPlaylist: (title: string, description?: string) => Promise<Playlist | null>;
   createSubscriptionPlaylist: (title: string, searchKeyword: string, description?: string) => Promise<Playlist | null>;
@@ -37,9 +37,9 @@ export const usePlaylistStore = create<PlaylistState>((set, get) => ({
     }
   },
 
-  loadPlaylistDetail: async (id, page = 1, search) => {
+  loadPlaylistDetail: async (id, page = 1, search, sort) => {
     set({ loading: true });
-    const res = await playlistApi.getPlaylistDetail(id, page, 50, search);
+    const res = await playlistApi.getPlaylistDetail(id, page, 50, search, sort);
     set({ loading: false });
 
     if (res.code === 0 && res.data) {
