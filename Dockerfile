@@ -25,7 +25,7 @@ WORKDIR /app/server
 RUN npm ci
 
 COPY server/src ./src
-RUN npm run build
+RUN npm run build && ls -la dist/
 
 # Production stage
 FROM node:20-alpine
@@ -35,7 +35,7 @@ WORKDIR /app
 # Copy server built files and package.json
 COPY --from=server-builder /app/server/dist ./dist
 COPY --from=server-builder /app/server/package*.json ./
-RUN npm ci --only=production
+RUN ls -la dist/ && npm ci --only=production
 
 # Copy client built files to public directory
 COPY --from=client-builder /app/client/dist ./public
