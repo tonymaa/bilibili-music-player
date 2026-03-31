@@ -1,5 +1,5 @@
 # Build stage for client
-FROM docker.1ms.run/node:20-alpine AS client-builder
+FROM registry.cn-hangzhou.aliyuncs.com/library/node:20-alpine AS client-builder
 
 WORKDIR /app
 
@@ -13,7 +13,7 @@ COPY client/ ./
 RUN npm run build
 
 # Build stage for server
-FROM docker.1ms.run/node:20-alpine AS server-builder
+FROM registry.cn-hangzhou.aliyuncs.com/library/node:20-alpine AS server-builder
 
 WORKDIR /app
 
@@ -28,7 +28,7 @@ COPY server/src ./src
 RUN npm run build
 
 # Production stage
-FROM docker.1ms.run/node:20-alpine
+FROM registry.cn-hangzhou.aliyuncs.com/library/node:20-alpine
 
 WORKDIR /app
 
