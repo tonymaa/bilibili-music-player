@@ -25,7 +25,7 @@ WORKDIR /app/server
 RUN npm ci
 
 COPY server/src ./src
-RUN npm run build && ls -la dist/
+RUN npm run build
 
 # Production stage
 FROM node:20-alpine
@@ -33,7 +33,7 @@ FROM node:20-alpine
 WORKDIR /app
 
 # Copy server built files and package.json
-COPY --from=server-builder /app/server/dist ./dist
+COPY --from=server-builder /app/server/dist/server/src ./dist
 COPY --from=server-builder /app/server/package*.json ./
 RUN ls -la dist/ && npm ci --only=production
 

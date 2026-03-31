@@ -14,12 +14,16 @@ export interface Playlist {
     title: string;
     description?: string;
     coverUrl?: string;
+    playlistType?: 'normal' | 'subscription';
+    searchKeyword?: string;
+    lastSyncedAt?: string;
     songCount: number;
     createdAt: string;
     updatedAt: string;
 }
 export interface PlaylistDetail extends Playlist {
     songs: Song[];
+    total?: number;
 }
 export interface PlayerSettings {
     playMode: 'order' | 'shuffle' | 'singleLoop';
