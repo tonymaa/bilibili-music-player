@@ -4,7 +4,11 @@
       "Bash(curl -s http://localhost:17600/api/playlists)",
       "mcp__chrome-devtools__take_screenshot",
       "mcp__chrome-devtools__take_snapshot",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)",
+      "Bash(find e:/project/bilibili-player/client/node_modules/react-lrc -name *.d.ts -exec cat {})",
+      "Bash(2)",
+      "Bash(docker build:*)"
     ]
   }
 }

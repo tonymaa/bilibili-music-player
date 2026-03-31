@@ -145,7 +145,7 @@ const LyricPanel: React.FC<LyricPanelProps> = ({ visible, onClose }) => {
             <Lrc
               className={styles.lrc}
               lrc={lyric}
-              currentTime={adjustedCurrentTime}
+              currentMillisecond={adjustedCurrentTime * 1000}
               lineRenderer={({ line, active }) => (
                 <div className={active ? styles.activeLine : styles.line}>
                   {line?.content || ''}

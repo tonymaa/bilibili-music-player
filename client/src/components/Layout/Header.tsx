@@ -26,7 +26,7 @@ const formatTime = (seconds: number): string => {
 
 const Header: React.FC = () => {
   const [showSearch, setShowSearch] = useState(false);
-  const { exportData, importData } = usePlaylistStore();
+  const { } = usePlaylistStore();
   const { unfinishedSongs, loadUnfinishedSongs, playSong, setPlaylist, clearAllProgress, deleteSongProgress, autoSeekToProgress, setAutoSeekToProgress } = usePlayerStore();
 
   // 加载未播放完的歌曲
@@ -111,7 +111,7 @@ const Header: React.FC = () => {
                   </div>
                 }
                 title={<span style={{ fontSize: 14 }}>{item.song.name}</span>}
-                description={<span style={{ fontSize: 12, color: '#999' }}>{item.singer} · {formatTime(item.progress)}</span>}
+                description={<span style={{ fontSize: 12, color: '#999' }}>{item.song.singer} · {formatTime(item.progress)}</span>}
               />
             </List.Item>
           )}

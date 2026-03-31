@@ -1,29 +1,5 @@
 import React, { useEffect, useRef } from 'react';
 import { Slider, Button, Tooltip, Dropdown, Popover } from 'antd';
-
-// Media Session API 类型声明
-declare global {
-  interface Navigator {
-    mediaSession?: MediaSession;
-  }
-}
-
-interface MediaSession {
-  metadata: MediaMetadata | null;
-  playbackState: 'none' | 'playing' | 'paused';
-  setActionHandler(action: string, handler: (() => void) | null): void;
-}
-
-interface MediaMetadata {
-  title: string | null;
-  artist: string | null;
-  album: string | null;
-  artwork: { src: string; sizes: string; type: string }[];
-}
-
-declare var MediaMetadata: {
-  new (init: { title?: string; artist?: string; album?: string; artwork?: { src: string; sizes?: string; type?: string }[] }): MediaMetadata;
-};
 import {
   PlayCircleOutlined,
   PauseCircleOutlined,

@@ -3,7 +3,8 @@ FROM node:20-alpine AS client-builder
 
 WORKDIR /app
 
-COPY shared/types ./shared/types
+# Copy shared types first (client uses relative path ../../shared/types)
+COPY shared ./shared
 COPY client/package*.json ./client/
 WORKDIR /app/client
 RUN npm ci
@@ -16,12 +17,14 @@ FROM node:20-alpine AS server-builder
 
 WORKDIR /app
 
-COPY shared/types ./shared/types
+# Copy shared types (server uses relative path ../../../shared/types from src/services/)
+COPY shared ./shared
 COPY server/package*.json ./server/
+COPY server/tsconfig.json ./server/
 WORKDIR /app/server
 RUN npm ci
 
-COPY server/ ./
+COPY server/src ./src
 RUN npm run build
 
 # Production stage
@@ -29,7 +32,7 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy server built files
+# Copy server built files and package.json
 COPY --from=server-builder /app/server/dist ./dist
 COPY --from=server-builder /app/server/package*.json ./
 RUN npm ci --only=production
