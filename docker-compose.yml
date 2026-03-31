@@ -1,0 +1,13 @@
+services:
+  app:
+    build: .
+    container_name: bilibili-player
+    restart: unless-stopped
+    ports:
+      - "17500:17600"
+    volumes:
+      - ./server/database:/app/database
+    environment:
+      - NODE_ENV=production
+      - BILIBILI_SESSDATA=${BILIBILI_SESSDATA}
+      - BILIBILI_BILI_JCT=${BILIBILI_BILI_JCT}

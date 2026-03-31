@@ -8,6 +8,7 @@ build/
 # Database
 *.sqlite
 *.db
+data/
 
 # IDE
 .idea/

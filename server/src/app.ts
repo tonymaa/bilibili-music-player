@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
 import { initDatabase } from './config/database';
 import routes from './routes';
 import { playlistService } from './services/PlaylistService';
@@ -25,6 +26,19 @@ async function startServer() {
     app.get('/health', (req, res) => {
       res.json({ status: 'ok', timestamp: new Date().toISOString() });
     });
+
+    // 生产环境：服务前端静态文件
+    if (process.env.NODE_ENV === 'production') {
+      const staticPath = path.join(__dirname, '../public');
+      app.use(express.static(staticPath));
+
+      // SPA fallback - 所有非 API 路由返回 index.html
+      app.get('*', (req, res) => {
+        if (!req.path.startsWith('/api')) {
+          res.sendFile(path.join(staticPath, 'index.html'));
+        }
+      });
+    }
 
     // 错误处理
     app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {

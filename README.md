@@ -48,7 +48,29 @@ bilibili-player/
 
 ## 快速开始
 
-### 安装依赖
+### Docker 部署（推荐）
+
+1. 复制环境变量配置文件：
+```bash
+cp .env.example .env
+```
+
+2. 编辑 `.env` 文件，填入你的 Bilibili Cookie：
+```
+BILIBILI_SESSDATA=你的SESSDATA
+BILIBILI_BILI_JCT=你的bili_jct
+```
+
+3. 一键启动：
+```bash
+docker-compose up -d
+```
+
+4. 访问 http://localhost:17500
+
+### 手动安装
+
+#### 安装依赖
 
 ```bash
 # 安装后端依赖
@@ -60,7 +82,7 @@ cd ../client
 npm install
 ```
 
-### 启动开发服务器
+#### 启动开发服务器
 
 ```bash
 # 启动后端 (在 server 目录)
@@ -70,7 +92,7 @@ npm run dev
 npm run dev
 ```
 
-### 访问
+#### 访问
 
 - 前端: http://localhost:17500
 - 后端 API: http://localhost:17600/api
