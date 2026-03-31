@@ -1,5 +1,5 @@
 # Build stage for client
-FROM node:20-alpine AS client-builder
+FROM docker.1ms.run/node:20-alpine AS client-builder
 
 WORKDIR /app
 
@@ -13,7 +13,7 @@ COPY client/ ./
 RUN npm run build
 
 # Build stage for server
-FROM node:20-alpine AS server-builder
+FROM docker.1ms.run/node:20-alpine AS server-builder
 
 WORKDIR /app
 
@@ -28,7 +28,7 @@ COPY server/src ./src
 RUN npm run build
 
 # Production stage
-FROM node:20-alpine
+FROM docker.1ms.run/node:20-alpine
 
 WORKDIR /app
 
