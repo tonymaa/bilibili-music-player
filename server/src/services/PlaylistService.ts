@@ -414,6 +414,9 @@ export class PlaylistService {
       return { addedCount: 0, songs: [] };
     }
 
+    // 反转顺序，使最早的在最前面
+    songs.reverse();
+
     // 添加到歌单
     const addedCount = this.addSongsToPlaylist(id, songs);
 

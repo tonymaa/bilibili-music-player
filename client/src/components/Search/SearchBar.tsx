@@ -107,6 +107,9 @@ const SearchBar: React.FC = () => {
         return;
       }
 
+      // 反转顺序，使最早的在最前面
+      songs.reverse();
+
       // 创建新歌单保存搜索结果
       const playlist = await createPlaylist(`搜索结果 ${new Date().toLocaleString()}`);
       if (playlist) {
